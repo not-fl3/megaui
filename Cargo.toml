@@ -1,0 +1,9 @@
+[package]
+name = "megaui"
+version = "0.1.0"
+authors = ["fl3 <not.fl3@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+smart-default = "0.3"
+cgmath = "0.16"
