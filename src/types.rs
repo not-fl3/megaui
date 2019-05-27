@@ -290,3 +290,14 @@ impl Into<String> for Color {
         )
     }
 }
+
+impl<'a> From<&'a str> for Color {
+    fn from(value: &str) -> Self {
+        Color {
+            r: 1.0,
+            g: 0.0,
+            b: 0.0,
+            a: 0.0
+        }
+    }
+}

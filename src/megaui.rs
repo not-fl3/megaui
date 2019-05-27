@@ -793,7 +793,7 @@ impl Ui {
         self.events.next_frame();
     }
 
-    pub fn draw(&mut self, ctx: &mut Context) {
+    pub fn draw<T>(&mut self, ctx: &mut T) where T: Context {
         // pre frame drawing
         // removing stalled windows and moving focus to the next window in queue
         {
@@ -893,9 +893,9 @@ impl Ui {
     }
 }
 
-struct UiContext<'a> {
+struct UiContext<'a, T> where T: Context {
     elements: &'a HashMap<Id, TreeElement>,
-    ctx: &'a mut Context,
+    ctx: &'a mut T,
     events: &'a mut Events,
     input: &'a Input,
     focused: bool,
@@ -906,7 +906,7 @@ struct UiContext<'a> {
     toggles: &'a mut Toggles,
 }
 
-fn draw_element(context: &mut UiContext, cursor: &mut Cursor, id: Id) -> Rect {
+fn draw_element<T>(context: &mut UiContext<T>, cursor: &mut Cursor, id: Id) -> Rect where T: Context {
     let element = &context.elements[&id];
     let widget = &element.widget;
     let orig = Vector2::new(cursor.area.x as f32, cursor.area.y as f32) + cursor.scroll;
@@ -1150,7 +1150,7 @@ fn extend_rect(left: Rect, right: Rect) -> Rect {
     rect
 }
 
-fn draw_scroll_area(context: &mut UiContext, id: Id, rect: Rect, elements: &[Id]) {
+fn draw_scroll_area<T>(context: &mut UiContext<T>, id: Id, rect: Rect, elements: &[Id]) where T: Context {
     let mut cursor = Cursor::new(rect);
     let mut inner_rect = Rect::new(0., 0., rect.w, rect.h);
     {
@@ -1201,7 +1201,7 @@ fn draw_scroll_area(context: &mut UiContext, id: Id, rect: Rect, elements: &[Id]
     context.ctx.clip(None);
 }
 
-fn draw_vertical_scroll_bar(context: &mut UiContext, area: Rect, rect: Rect, id: Id) {
+fn draw_vertical_scroll_bar<T>(context: &mut UiContext<T>, area: Rect, rect: Rect, id: Id) where T: Context {
     let mut scroll = context.scroll_bars.get_mut(&id).unwrap();
     let size = scroll.rect.h / scroll.inner_rect.h * rect.h;
     let pos = (scroll.rect.y - scroll.inner_rect.y) / scroll.inner_rect.h * rect.h;
@@ -1249,7 +1249,7 @@ fn draw_vertical_scroll_bar(context: &mut UiContext, area: Rect, rect: Rect, id:
     );
 }
 
-fn draw_group_frame(ctx: &mut Context, focused: bool, hovered: bool, highlight: bool, rect: Rect) {
+fn draw_group_frame<T>(ctx: &mut T, focused: bool, hovered: bool, highlight: bool, rect: Rect) where T: Context {
     ctx.draw_rect(
         rect,
         &[RectAttr::Stroke(consts::drag_border(
@@ -1267,13 +1267,13 @@ enum ArrowDirection {
 }
 
 #[allow(dead_code)]
-fn draw_arrow(
-    ctx: &mut Context,
+fn draw_arrow<T>(
+    ctx: &mut T,
     pos: Point2<f32>,
     size: Vector2<f32>,
     dir: ArrowDirection,
     focused: bool,
-) {
+) where T: Context {
     let p1;
     let p2;
     let p3;
@@ -1305,7 +1305,7 @@ fn draw_arrow(
     ctx.draw_line(p2, p3, consts::window_border(focused));
 }
 
-fn draw_window_frame(ctx: &mut Context, focused: bool, window: &Window) {
+fn draw_window_frame<T>(ctx: &mut T, focused: bool, window: &Window) where T: Context {
     let Window { label, rect, .. } = window;
 
     ctx.draw_rect(
