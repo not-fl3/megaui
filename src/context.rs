@@ -1,4 +1,4 @@
-use crate::types::{Point2, Rect, RectAttr, Vector2};
+use crate::types::{Point2, Rect, RectAttr, Vector2, Color};
 
 pub trait Context {
     fn draw_label(
@@ -11,6 +11,6 @@ pub trait Context {
     );
     fn measure_label(&mut self, label: &str, _: Option<()>) -> Vector2;
     fn draw_rect(&mut self, rect: Rect, attrs: &[RectAttr]);
-    fn draw_line(&mut self, start: Point2, end: Point2, color: &str);
+    fn draw_line<T>(&mut self, start: Point2, end: Point2, color: T) where T: Into<Color>;
     fn clip(&mut self, rect: Option<Rect>);
 }
