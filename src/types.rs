@@ -5,9 +5,9 @@ pub enum RectAttr<'a> {
 }
 
 /// A 2 dimensional point representing a location
-pub(crate) type Point2 = cgmath::Point2<f32>;
+pub type Point2 = cgmath::Point2<f32>;
 /// A 2 dimensional vector representing an offset of a location
-pub(crate) type Vector2 = cgmath::Vector2<f32>;
+pub type Vector2 = cgmath::Vector2<f32>;
 
 /// A simple 2D rectangle.
 ///

@@ -1,5 +1,5 @@
 mod megaui;
-mod types;
+pub mod types;
 mod context;
 
 pub use context::Context;
