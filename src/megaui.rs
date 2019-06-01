@@ -1,5 +1,5 @@
 use crate::{
-    types::{Rect, RectAttr},
+    types::{Color, Rect},
     Context,
 };
 
@@ -219,6 +219,19 @@ impl Window {
 }
 
 mod consts {
+    use crate::types::Color;
+
+    macro_rules! color {
+        ($c:expr) => {
+            Color {
+                r: $c.0 as f32 / 256.,
+                g: $c.1 as f32 / 256.,
+                b: $c.2 as f32 / 256.,
+                a: $c.3,
+            }
+        };
+    }
+
     pub const MARGIN: f32 = 2.;
     pub const TITLE_HEIGHT: f32 = MARGIN * 2. + 10.;
     pub const MARGIN_BUTTON: f32 = 3.;
@@ -226,29 +239,29 @@ mod consts {
     pub const SCROLL_MULTIPLIER: f32 = 3.;
     pub const TREE_OFFSET: f32 = 15.;
 
-    pub const INACTIVE_TITLE: &'static str = "#6668";
-    pub const FOCUSED_TITLE: &'static str = "#000f";
-    pub const FOCUSED_TEXT: &'static str = "000f";
-    pub const INACTIVE_TEXT: &'static str = "#6668";
-    pub const WINDOW_BACKGROUND_FOCUSED: &'static str = "#eeef";
-    pub const WINDOW_BACKGROUND_INACTIVE: &'static str = "#eee8";
-    pub const WINDOW_BORDER_FOCUSED: &'static str = "#444f";
-    pub const WINDOW_BORDER_INACTIVE: &'static str = "#6668";
-    pub const GROUP_BORDER_FOCUSED_HOVERED: &'static str = "#2924";
-    pub const GROUP_BORDER_FOCUSED: &'static str = "#2224";
-    pub const GROUP_BORDER_FOCUSED_HIGHLIGHT: &'static str = "#22ff";
-    pub const GROUP_BORDER_INACTIVE_HOVERED: &'static str = "#1812";
-    pub const GROUP_BORDER_INACTIVE: &'static str = "#1112";
-    pub const BUTTON_BACKGROUND_FOCUSED_CLICKED: &'static str = "#bbbe";
-    pub const BUTTON_BACKGROUND_FOCUSED_HOVERED: &'static str = "#aaae";
-    pub const BUTTON_BACKGROUND_FOCUSED: &'static str = "#ccce";
-    pub const BUTTON_BACKGROUND_INACTIVE: &'static str = "#ccc8";
-    pub const SCROLLBAR_BACKGROUND_FOCUSED_CLICKED: &'static str = "#aaae";
-    pub const SCROLLBAR_BACKGROUND_FOCUSED_HOVERED: &'static str = "#aaae";
-    pub const SCROLLBAR_BACKGROUND_FOCUSED: &'static str = "#ccce";
-    pub const SCROLLBAR_BACKGROUND_INACTIVE: &'static str = "#ccc8";
+    pub const INACTIVE_TITLE: Color = color!((102, 102, 102, 0.5333));
+    pub const FOCUSED_TITLE: Color = color!((0, 0, 0, 1.000));
+    pub const FOCUSED_TEXT: Color = color!((0, 0, 0, 1.000));
+    pub const INACTIVE_TEXT: Color = color!((102, 102, 102, 0.5333));
+    pub const WINDOW_BACKGROUND_FOCUSED: Color = color!((238, 238, 238, 1.000));
+    pub const WINDOW_BACKGROUND_INACTIVE: Color = color!((238, 238, 238, 0.5333));
+    pub const WINDOW_BORDER_FOCUSED: Color = color!((68, 68, 68, 1.000));
+    pub const WINDOW_BORDER_INACTIVE: Color = color!((102, 102, 102, 0.5333));
+    pub const GROUP_BORDER_FOCUSED_HOVERED: Color = color!((34, 153, 34, 0.2667));
+    pub const GROUP_BORDER_FOCUSED: Color = color!((34, 34, 34, 0.2667));
+    pub const GROUP_BORDER_FOCUSED_HIGHLIGHT: Color = color!((34, 34, 255, 1.000));
+    pub const GROUP_BORDER_INACTIVE_HOVERED: Color = color!((17, 136, 17, 0.1333));
+    pub const GROUP_BORDER_INACTIVE: Color = color!((17, 17, 17, 0.1333));
+    pub const BUTTON_BACKGROUND_FOCUSED_CLICKED: Color = color!((187, 187, 187, 0.9333));
+    pub const BUTTON_BACKGROUND_FOCUSED_HOVERED: Color = color!((170, 170, 170, 0.9333));
+    pub const BUTTON_BACKGROUND_FOCUSED: Color = color!((204, 204, 204, 0.9333));
+    pub const BUTTON_BACKGROUND_INACTIVE: Color = color!((204, 204, 204, 0.5333));
+    pub const SCROLLBAR_BACKGROUND_FOCUSED_CLICKED: Color = color!((170, 170, 170, 0.9333));
+    pub const SCROLLBAR_BACKGROUND_FOCUSED_HOVERED: Color = color!((170, 170, 170, 0.9333));
+    pub const SCROLLBAR_BACKGROUND_FOCUSED: Color = color!((204, 204, 204, 0.9333));
+    pub const SCROLLBAR_BACKGROUND_INACTIVE: Color = color!((204, 204, 204, 0.5333));
 
-    pub fn background(focused: bool) -> &'static str {
+    pub fn background(focused: bool) -> Color {
         if focused {
             WINDOW_BACKGROUND_FOCUSED
         } else {
@@ -256,7 +269,7 @@ mod consts {
         }
     }
 
-    pub fn window_border(focused: bool) -> &'static str {
+    pub fn window_border(focused: bool) -> Color {
         if focused {
             WINDOW_BORDER_FOCUSED
         } else {
@@ -264,7 +277,7 @@ mod consts {
         }
     }
 
-    pub fn drag_border(focused: bool, hovered: bool, highlight: bool) -> &'static str {
+    pub fn drag_border(focused: bool, hovered: bool, highlight: bool) -> Color {
         if focused {
             if hovered {
                 GROUP_BORDER_FOCUSED_HOVERED
@@ -284,7 +297,7 @@ mod consts {
         }
     }
 
-    pub fn title(focused: bool) -> &'static str {
+    pub fn title(focused: bool) -> Color {
         if focused {
             FOCUSED_TITLE
         } else {
@@ -292,7 +305,7 @@ mod consts {
         }
     }
 
-    pub fn text(focused: bool) -> &'static str {
+    pub fn text(focused: bool) -> Color {
         if focused {
             FOCUSED_TEXT
         } else {
@@ -300,7 +313,7 @@ mod consts {
         }
     }
 
-    pub fn button_background(focused: bool, hovered: bool, clicked: bool) -> &'static str {
+    pub fn button_background(focused: bool, hovered: bool, clicked: bool) -> Color {
         if focused {
             if clicked {
                 BUTTON_BACKGROUND_FOCUSED_CLICKED
@@ -314,12 +327,7 @@ mod consts {
         }
     }
 
-    pub fn tabbar_background(
-        focused: bool,
-        selected: bool,
-        hovered: bool,
-        clicked: bool,
-    ) -> &'static str {
+    pub fn tabbar_background(focused: bool, selected: bool, hovered: bool, clicked: bool) -> Color {
         if focused {
             if clicked {
                 BUTTON_BACKGROUND_FOCUSED_CLICKED
@@ -337,7 +345,7 @@ mod consts {
         }
     }
 
-    pub fn scroll_bar_handle(focused: bool, hovered: bool, clicked: bool) -> &'static str {
+    pub fn scroll_bar_handle(focused: bool, hovered: bool, clicked: bool) -> Color {
         if focused {
             if clicked {
                 SCROLLBAR_BACKGROUND_FOCUSED_CLICKED
@@ -793,7 +801,10 @@ impl Ui {
         self.events.next_frame();
     }
 
-    pub fn draw<T>(&mut self, ctx: &mut T) where T: Context {
+    pub fn draw<T>(&mut self, ctx: &mut T)
+    where
+        T: Context,
+    {
         // pre frame drawing
         // removing stalled windows and moving focus to the next window in queue
         {
@@ -893,7 +904,10 @@ impl Ui {
     }
 }
 
-struct UiContext<'a, T> where T: Context {
+struct UiContext<'a, T>
+where
+    T: Context,
+{
     elements: &'a HashMap<Id, TreeElement>,
     ctx: &'a mut T,
     events: &'a mut Events,
@@ -906,7 +920,10 @@ struct UiContext<'a, T> where T: Context {
     toggles: &'a mut Toggles,
 }
 
-fn draw_element<T>(context: &mut UiContext<T>, cursor: &mut Cursor, id: Id) -> Rect where T: Context {
+fn draw_element<T>(context: &mut UiContext<T>, cursor: &mut Cursor, id: Id) -> Rect
+where
+    T: Context,
+{
     let element = &context.elements[&id];
     let widget = &element.widget;
     let orig = Vector2::new(cursor.area.x as f32, cursor.area.y as f32) + cursor.scroll;
@@ -931,7 +948,7 @@ fn draw_element<T>(context: &mut UiContext<T>, cursor: &mut Cursor, id: Id) -> R
                     Point2::new(window.rect.x + window.rect.w - 10., window.rect.y + 3.),
                     None,
                     None,
-                    None,
+                    Some(Color::new(1., 1., 1., 1.)),
                 );
                 if context.focused
                     && button_rect.contains(context.input.mouse_position)
@@ -969,12 +986,13 @@ fn draw_element<T>(context: &mut UiContext<T>, cursor: &mut Cursor, id: Id) -> R
                 }
                 context.ctx.draw_rect(
                     rect,
-                    &[RectAttr::Fill(consts::tabbar_background(
+                    None,
+                    consts::tabbar_background(
                         context.focused,
                         selected,
                         hovered,
                         hovered && context.input.is_mouse_down,
-                    ))],
+                    ),
                 );
 
                 context.ctx.draw_label(
@@ -984,7 +1002,7 @@ fn draw_element<T>(context: &mut UiContext<T>, cursor: &mut Cursor, id: Id) -> R
                     None,
                     None,
                     if selected {
-                        Some("#fff")
+                        Some(Color::new(1., 1., 1., 1.))
                     } else {
                         Some(consts::text(context.focused))
                     },
@@ -1008,11 +1026,12 @@ fn draw_element<T>(context: &mut UiContext<T>, cursor: &mut Cursor, id: Id) -> R
 
             context.ctx.draw_rect(
                 rect,
-                &[RectAttr::Fill(consts::button_background(
+                None,
+                consts::button_background(
                     context.focused,
                     hovered,
                     hovered && context.input.is_mouse_down,
-                ))],
+                ),
             );
             context.ctx.draw_label(
                 label,
@@ -1150,7 +1169,10 @@ fn extend_rect(left: Rect, right: Rect) -> Rect {
     rect
 }
 
-fn draw_scroll_area<T>(context: &mut UiContext<T>, id: Id, rect: Rect, elements: &[Id]) where T: Context {
+fn draw_scroll_area<T>(context: &mut UiContext<T>, id: Id, rect: Rect, elements: &[Id])
+where
+    T: Context,
+{
     let mut cursor = Cursor::new(rect);
     let mut inner_rect = Rect::new(0., 0., rect.w, rect.h);
     {
@@ -1201,7 +1223,10 @@ fn draw_scroll_area<T>(context: &mut UiContext<T>, id: Id, rect: Rect, elements:
     context.ctx.clip(None);
 }
 
-fn draw_vertical_scroll_bar<T>(context: &mut UiContext<T>, area: Rect, rect: Rect, id: Id) where T: Context {
+fn draw_vertical_scroll_bar<T>(context: &mut UiContext<T>, area: Rect, rect: Rect, id: Id)
+where
+    T: Context,
+{
     let mut scroll = context.scroll_bars.get_mut(&id).unwrap();
     let size = scroll.rect.h / scroll.inner_rect.h * rect.h;
     let pos = (scroll.rect.y - scroll.inner_rect.y) / scroll.inner_rect.h * rect.h;
@@ -1241,21 +1266,16 @@ fn draw_vertical_scroll_bar<T>(context: &mut UiContext<T>, area: Rect, rect: Rec
 
     context.ctx.draw_rect(
         bar,
-        &[RectAttr::Fill(consts::scroll_bar_handle(
-            context.focused,
-            hovered,
-            clicked,
-        ))],
+        None,
+        consts::scroll_bar_handle(context.focused, hovered, clicked),
     );
 }
 
-fn draw_group_frame<T>(ctx: &mut T, focused: bool, hovered: bool, highlight: bool, rect: Rect) where T: Context {
-    ctx.draw_rect(
-        rect,
-        &[RectAttr::Stroke(consts::drag_border(
-            focused, hovered, highlight,
-        ))],
-    );
+fn draw_group_frame<T>(ctx: &mut T, focused: bool, hovered: bool, highlight: bool, rect: Rect)
+where
+    T: Context,
+{
+    ctx.draw_rect(rect, consts::drag_border(focused, hovered, highlight), None);
 }
 
 #[allow(dead_code)]
@@ -1273,7 +1293,9 @@ fn draw_arrow<T>(
     size: Vector2<f32>,
     dir: ArrowDirection,
     focused: bool,
-) where T: Context {
+) where
+    T: Context,
+{
     let p1;
     let p2;
     let p3;
@@ -1305,15 +1327,16 @@ fn draw_arrow<T>(
     ctx.draw_line(p2, p3, consts::window_border(focused));
 }
 
-fn draw_window_frame<T>(ctx: &mut T, focused: bool, window: &Window) where T: Context {
+fn draw_window_frame<T>(ctx: &mut T, focused: bool, window: &Window)
+where
+    T: Context,
+{
     let Window { label, rect, .. } = window;
 
     ctx.draw_rect(
         *rect,
-        &[
-            RectAttr::Stroke(consts::window_border(focused)),
-            RectAttr::Fill(consts::background(focused)),
-        ],
+        consts::window_border(focused),
+        consts::background(focused),
     );
     ctx.draw_label(
         &label,

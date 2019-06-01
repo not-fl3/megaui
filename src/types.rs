@@ -1,9 +1,3 @@
-pub enum RectAttr<'a> {
-    Stroke(&'a str),
-    Fill(&'a str),
-    Rotate(f32),
-}
-
 /// A 2 dimensional point representing a location
 pub type Point2 = cgmath::Point2<f32>;
 /// A 2 dimensional vector representing an offset of a location
@@ -279,6 +273,12 @@ impl From<Color> for [f32; 4] {
     }
 }
 
+impl From<(i32, i32, i32, f32)> for Color {
+    fn from((r, g, b, a): (i32, i32, i32, f32)) -> Color {
+        Color::new(r as f32 / 256., g as f32 / 256., b as f32 / 256., a)
+    }
+}
+
 impl Into<String> for Color {
     fn into(self) -> String {
         format!(
@@ -288,16 +288,5 @@ impl Into<String> for Color {
             (self.b * 255.) as i32,
             (self.a * 255.) as i32
         )
-    }
-}
-
-impl<'a> From<&'a str> for Color {
-    fn from(value: &str) -> Self {
-        Color {
-            r: 1.0,
-            g: 0.0,
-            b: 0.0,
-            a: 0.0
-        }
     }
 }
