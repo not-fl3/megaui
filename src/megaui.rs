@@ -5,7 +5,7 @@ use crate::{
 
 use cgmath::{MetricSpace, Point2, Vector2};
 use smart_default::SmartDefault;
-
+use crate::input_handler::InputHandler;
 use std::collections::HashMap;
 
 type Id = u64;
@@ -631,6 +631,51 @@ impl Ui {
     }
 }
 
+impl InputHandler for Ui {
+    fn mouse_down(&mut self, position: Point2<f32>) {
+        self.input.is_mouse_down = true;
+        self.input.click_down = true;
+
+        for (n, wid) in self.windows_focus_queue.iter().enumerate() {
+            if self.tree.elements[wid].is_disposed(self.tree.current_generation - 1) {
+                continue;
+            }
+            let window = &self.tree.elements[wid].widget.unwrap_window();
+
+            if window.title_contains(position) {
+                self.moving = Some((*wid, position - Point2::new(window.rect.x, window.rect.y)));
+            }
+
+            if window.window_contains(position) {
+                self.focused = Some(*wid);
+                let window = self.windows_focus_queue.remove(n);
+                self.windows_focus_queue.insert(0, window);
+                return;
+            }
+        }
+        self.focused = None;
+    }
+
+    fn mouse_up(&mut self, _: Point2<f32>) {
+        self.moving = None;
+        self.input.is_mouse_down = false;
+        self.input.click_up = true;
+    }
+
+    fn mouse_wheel(&mut self, x: f32, y: f32) {
+        self.input.mouse_wheel = Vector2::new(x, y);
+    }
+
+    fn mouse_move(&mut self, position: Point2<f32>) {
+        if let Some((id, orig)) = self.moving.as_ref() {
+            *self.positions.get_mut(&id).unwrap() =
+                Point2::new(position.x - orig.x, position.y - orig.y);
+        }
+
+        self.input.mouse_position = position;
+    }
+}
+
 impl Ui {
     pub fn button<T: Into<Option<Point2<f32>>>>(&mut self, pos: T, id: Id, label: &str) -> bool {
         let id = hash!(self.tree.current_element, "btn", label, id);
@@ -730,49 +775,6 @@ impl Ui {
         }
         self.focused = Some(id);
         self.positions.insert(id, position);
-    }
-
-    pub fn mouse_down(&mut self, position: Point2<f32>) {
-        self.input.is_mouse_down = true;
-        self.input.click_down = true;
-
-        for (n, wid) in self.windows_focus_queue.iter().enumerate() {
-            if self.tree.elements[wid].is_disposed(self.tree.current_generation - 1) {
-                continue;
-            }
-            let window = &self.tree.elements[wid].widget.unwrap_window();
-
-            if window.title_contains(position) {
-                self.moving = Some((*wid, position - Point2::new(window.rect.x, window.rect.y)));
-            }
-
-            if window.window_contains(position) {
-                self.focused = Some(*wid);
-                let window = self.windows_focus_queue.remove(n);
-                self.windows_focus_queue.insert(0, window);
-                return;
-            }
-        }
-        self.focused = None;
-    }
-
-    pub fn mouse_up(&mut self, _: Point2<f32>) {
-        self.moving = None;
-        self.input.is_mouse_down = false;
-        self.input.click_up = true;
-    }
-
-    pub fn mouse_wheel(&mut self, x: f32, y: f32) {
-        self.input.mouse_wheel = Vector2::new(x, y);
-    }
-
-    pub fn mouse_move(&mut self, position: Point2<f32>) {
-        if let Some((id, orig)) = self.moving.as_ref() {
-            *self.positions.get_mut(&id).unwrap() =
-                Point2::new(position.x - orig.x, position.y - orig.y);
-        }
-
-        self.input.mouse_position = position;
     }
 
     pub fn is_dragging(&self) -> bool {
