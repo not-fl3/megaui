@@ -100,6 +100,10 @@ impl Rect {
         let h = f32::max(self.bottom(), other.bottom()) - y;
         Rect { x, y, w, h }
     }
+
+    pub fn offset(self, offset: Vector2) -> Rect {
+        Rect::new(self.x + offset.x, self.y + offset.y, self.w, self.h)
+    }
 }
 
 /// A RGBA color in the `sRGB` color space represented as `f32`'s in the range `[0.0-1.0]`
@@ -116,22 +120,6 @@ pub struct Color {
     /// Alpha component
     pub a: f32,
 }
-
-/// White
-pub const WHITE: Color = Color {
-    r: 1.0,
-    g: 1.0,
-    b: 1.0,
-    a: 1.0,
-};
-
-/// Black
-pub const BLACK: Color = Color {
-    r: 0.0,
-    g: 0.0,
-    b: 0.0,
-    a: 1.0,
-};
 
 impl Color {
     /// Create a new `Color` from four `f32`'s in the range `[0.0-1.0]`
