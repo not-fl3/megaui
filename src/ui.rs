@@ -1,7 +1,7 @@
 use crate::{
     draw_list::{DrawCommand, DrawList},
     types::Rect,
-    types::{Vector2},
+    types::Vector2,
     Context, Id, InputHandler, Style,
 };
 

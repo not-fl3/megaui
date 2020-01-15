@@ -10,10 +10,10 @@ pub mod widgets;
 pub use context::{Aligment, Context, LabelParams};
 pub use input_handler::InputHandler;
 pub use style::Style;
-pub use types::{Color, Vector2, Rect};
+pub use types::{Color, Rect, Vector2};
 pub use ui::{Drag, Layout, Ui};
 
-pub(crate) type Id = u64;
+pub type Id = u64;
 
 #[macro_export]
 macro_rules! hash {
