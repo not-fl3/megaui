@@ -1,11 +1,11 @@
 use crate::{
     draw_list::{DrawCommand, DrawList},
     types::Rect,
-    types::{Point2, Vector2},
+    types::{Vector2},
     Context, Id, InputHandler, Style,
 };
 
-use rustc_hash::FxHashMap;
+use std::collections::HashMap;
 
 mod cursor;
 mod input;
@@ -23,7 +23,7 @@ pub(crate) struct Window {
     pub was_active: bool,
     pub active: bool,
     pub title_height: f32,
-    pub position: Point2,
+    pub position: Vector2,
     pub size: Vector2,
     pub draw_list: DrawList,
     pub cursor: Cursor,
@@ -34,7 +34,7 @@ impl Window {
     pub fn new(
         id: Id,
         parent: Option<Id>,
-        position: Point2,
+        position: Vector2,
         size: Vector2,
         title_height: f32,
         margin: f32,
@@ -80,7 +80,7 @@ impl Window {
         )
     }
 
-    pub fn set_position(&mut self, position: Point2) {
+    pub fn set_position(&mut self, position: Vector2) {
         self.position = position;
         self.cursor.area.x = position.x;
         self.cursor.area.y = position.y + self.title_height;
@@ -98,15 +98,15 @@ impl Window {
 
 #[derive(Copy, Clone, Debug)]
 pub enum DragState {
-    Clicked(Point2),
-    Dragging(Point2),
+    Clicked(Vector2),
+    Dragging(Vector2),
 }
 
 #[derive(Copy, Clone, Debug)]
 pub enum Drag {
     No,
     Dragging,
-    Dropped(Point2, Option<Id>),
+    Dropped(Vector2, Option<Id>),
 }
 
 pub struct Ui {
@@ -115,10 +115,10 @@ pub struct Ui {
     frame: u64,
 
     moving: Option<(Id, Vector2)>,
-    windows: FxHashMap<Id, Window>,
+    windows: HashMap<Id, Window>,
     windows_focus_order: Vec<Id>,
 
-    storage: FxHashMap<Id, u32>,
+    storage: HashMap<Id, u32>,
 
     dragging: Option<(Id, DragState)>,
     drag_hovered: Option<Id>,
@@ -130,7 +130,7 @@ pub(crate) struct WindowContext<'a> {
     pub window: &'a mut Window,
     pub dragging: &'a mut Option<(Id, DragState)>,
     pub drag_hovered: &'a mut Option<Id>,
-    pub storage: &'a mut FxHashMap<Id, u32>,
+    pub storage: &'a mut HashMap<Id, u32>,
     pub global_style: &'a Style,
     pub input: &'a Input,
     pub focused: bool,
@@ -172,8 +172,8 @@ impl<'a> WindowContext<'a> {
         let pos = (scroll.rect.y - inner_rect.y) / inner_rect.h * rect.h;
 
         self.window.draw_list.draw_line(
-            Point2::new(rect.x, rect.y),
-            Point2::new(rect.x, rect.y + rect.h),
+            Vector2::new(rect.x, rect.y),
+            Vector2::new(rect.x, rect.y + rect.h),
             self.global_style.window_border(self.focused),
         );
 
@@ -215,7 +215,9 @@ impl<'a> WindowContext<'a> {
 }
 
 impl InputHandler for Ui {
-    fn mouse_down(&mut self, position: Point2) {
+    fn mouse_down(&mut self, position: (f32, f32)) {
+        let position = Vector2::new(position.0, position.1);
+
         self.input.is_mouse_down = true;
         self.input.click_down = true;
         self.input.mouse_position = position;
@@ -230,7 +232,7 @@ impl InputHandler for Ui {
             if window.top_level() && window.title_rect().contains(position) {
                 self.moving = Some((
                     window.id,
-                    position - Point2::new(window.position.x, window.position.y),
+                    position - Vector2::new(window.position.x, window.position.y),
                 ));
             }
 
@@ -242,7 +244,7 @@ impl InputHandler for Ui {
         }
     }
 
-    fn mouse_up(&mut self, _: Point2) {
+    fn mouse_up(&mut self, _: (f32, f32)) {
         self.input.is_mouse_down = false;
         self.input.click_up = true;
         self.moving = None;
@@ -252,13 +254,15 @@ impl InputHandler for Ui {
         self.input.mouse_wheel = Vector2::new(x, y);
     }
 
-    fn mouse_move(&mut self, position: Point2) {
+    fn mouse_move(&mut self, position: (f32, f32)) {
+        let position = Vector2::new(position.0, position.1);
+
         self.input.mouse_position = position;
         if let Some((id, orig)) = self.moving.as_ref() {
             self.windows
                 .get_mut(id)
                 .unwrap()
-                .set_position(Point2::new(position.x - orig.x, position.y - orig.y));
+                .set_position(Vector2::new(position.x - orig.x, position.y - orig.y));
         }
     }
 }
@@ -270,13 +274,13 @@ impl Ui {
             style,
             frame: 0,
             moving: None,
-            windows: FxHashMap::default(),
+            windows: HashMap::default(),
             windows_focus_order: vec![],
             dragging: None,
             active_window: None,
             child_window_stack: vec![],
             drag_hovered: None,
-            storage: FxHashMap::default(),
+            storage: HashMap::default(),
         }
     }
 
@@ -284,7 +288,7 @@ impl Ui {
         &mut self,
         id: Id,
         parent: Option<Id>,
-        position: Point2,
+        position: Vector2,
         size: Vector2,
     ) -> WindowContext {
         if let Some(active_window) = self.active_window {
@@ -351,7 +355,7 @@ impl Ui {
         }
     }
 
-    pub fn is_mouse_over(&self, mouse_position: Point2) -> bool {
+    pub fn is_mouse_over(&self, mouse_position: Vector2) -> bool {
         for window in self.windows_focus_order.iter() {
             let window = &self.windows[window];
             if window.was_active == false {
@@ -465,7 +469,7 @@ impl Ui {
         }
     }
 
-    pub fn move_window(&mut self, id: Id, position: Point2) {
+    pub fn move_window(&mut self, id: Id, position: Vector2) {
         if let Some(window) = self.windows.get_mut(&id) {
             window.set_position(position);
         }

@@ -1,12 +1,12 @@
 use crate::{
-    types::{Point2, Vector2},
+    types::{Vector2},
     Layout, Ui,
 };
 
 use std::borrow::Cow;
 
 pub struct Label<'a> {
-    position: Option<Point2>,
+    position: Option<Vector2>,
     multiline: Option<f32>,
     label: Cow<'a, str>,
 }
@@ -30,7 +30,7 @@ impl<'a> Label<'a> {
         }
     }
 
-    pub fn position<P: Into<Option<Point2>>>(self, position: P) -> Self {
+    pub fn position<P: Into<Option<Vector2>>>(self, position: P) -> Self {
         let position = position.into();
 
         Label { position, ..self }
@@ -69,7 +69,7 @@ impl<'a> Label<'a> {
 }
 
 impl Ui {
-    pub fn label<P: Into<Option<Point2>>>(&mut self, position: P, label: &str) {
+    pub fn label<P: Into<Option<Vector2>>>(&mut self, position: P, label: &str) {
         Label::new(label).position(position).ui(self)
     }
 }

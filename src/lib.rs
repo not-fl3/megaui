@@ -1,7 +1,6 @@
 mod context;
 mod draw_list;
 mod input_handler;
-mod megaui;
 mod style;
 mod types;
 mod ui;
@@ -11,7 +10,7 @@ pub mod widgets;
 pub use context::{Aligment, Context, LabelParams};
 pub use input_handler::InputHandler;
 pub use style::Style;
-pub use types::{Color, Point2, Rect, Vector2};
+pub use types::{Color, Vector2, Rect};
 pub use ui::{Drag, Layout, Ui};
 
 pub(crate) type Id = u64;

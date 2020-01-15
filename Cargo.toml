@@ -5,6 +5,3 @@ authors = ["fl3 <not.fl3@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-rustc-hash = "1.0.1"
-smart-default = "0.3"
-cgmath = "0.16"

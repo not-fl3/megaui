@@ -1,12 +1,12 @@
 use crate::{
-    types::{Point2, Vector2},
+    types::{Vector2},
     Layout, Rect, Ui,
 };
 
 use std::borrow::Cow;
 
 pub struct Button<'a> {
-    position: Option<Point2>,
+    position: Option<Vector2>,
     size: Option<Vector2>,
     label: Cow<'a, str>,
 }
@@ -23,7 +23,7 @@ impl<'a> Button<'a> {
         }
     }
 
-    pub fn position<P: Into<Option<Point2>>>(self, position: P) -> Self {
+    pub fn position<P: Into<Option<Vector2>>>(self, position: P) -> Self {
         let position = position.into();
 
         Button { position, ..self }
@@ -71,7 +71,7 @@ impl<'a> Button<'a> {
 }
 
 impl Ui {
-    pub fn button<P: Into<Option<Point2>>>(&mut self, position: P, label: &str) -> bool {
+    pub fn button<P: Into<Option<Vector2>>>(&mut self, position: P, label: &str) -> bool {
         Button::new(label).position(position).ui(self)
     }
 }

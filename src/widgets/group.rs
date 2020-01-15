@@ -1,14 +1,13 @@
 use crate::{
-    types::{Point2, Rect, Vector2},
+    types::{Vector2, Rect},
     ui::{Drag, DragState},
     Id, Layout, Ui,
 };
-use cgmath::*;
 
 #[derive(Debug, Clone)]
 pub struct Group {
     id: Id,
-    position: Option<Point2>,
+    position: Option<Vector2>,
     size: Vector2,
     draggable: bool,
     highlight: bool,
@@ -27,7 +26,7 @@ impl Group {
         }
     }
 
-    pub fn position(self, position: Point2) -> Group {
+    pub fn position(self, position: Vector2) -> Group {
         Group {
             position: Some(position),
             ..self
@@ -125,7 +124,7 @@ impl Group {
             {
                 // *context.dragging = Some((
                 //     id,
-                //     DragState::Clicked(context.input.mouse_position, Point2::new(rect.x, rect.y)),
+                //     DragState::Clicked(context.input.mouse_position, Vector2::new(rect.x, rect.y)),
                 // ));
             }
         }

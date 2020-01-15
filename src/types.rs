@@ -1,7 +1,43 @@
-/// A 2 dimensional point representing a location
-pub type Point2 = cgmath::Point2<f32>;
-/// A 2 dimensional vector representing an offset of a location
-pub type Vector2 = cgmath::Vector2<f32>;
+#[derive(Copy, Clone, Default, Debug)]
+pub struct Vector2 {
+    pub x: f32,
+    pub y: f32
+}
+
+impl Vector2 {
+    pub fn new(x: f32, y: f32) -> Vector2 {
+        Vector2 {
+            x, y
+        }
+    }
+
+    pub fn distance(self, other: Vector2) -> f32 {
+        ((self.x - other.x) * (self.x - other.x) + (self.y - other.y) * (self.y - other.y)).sqrt()
+    }
+}
+
+impl std::ops::Add for Vector2 {
+    type Output = Vector2;
+    
+    fn add(self, rhs: Vector2) -> Vector2 {
+        Vector2 {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y
+        }
+    }
+}
+
+impl std::ops::Sub for Vector2 {
+    type Output = Vector2;
+    
+    fn sub(self, rhs: Vector2) -> Vector2 {
+        Vector2 {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y
+        }
+    }
+}
+
 
 /// A simple 2D rectangle.
 ///
@@ -77,7 +113,7 @@ impl Rect {
     }
 
     /// Checks whether the `Rect` contains a `Point`
-    pub fn contains(&self, point: cgmath::Point2<f32>) -> bool {
+    pub fn contains(&self, point: Vector2) -> bool {
         point.x >= self.left()
             && point.x <= self.right()
             && point.y <= self.bottom()

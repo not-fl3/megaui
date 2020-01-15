@@ -1,9 +1,9 @@
-use crate::{Color, LabelParams, Point2, Rect};
+use crate::{Color, LabelParams, Vector2, Rect};
 
 #[derive(Debug, Clone)]
 pub enum DrawCommand {
     DrawLabel {
-        position: Point2,
+        position: Vector2,
         label: String,
         params: LabelParams,
     },
@@ -13,8 +13,8 @@ pub enum DrawCommand {
         fill: Option<Color>,
     },
     DrawLine {
-        start: Point2,
-        end: Point2,
+        start: Vector2,
+        end: Vector2,
         color: Color,
     },
     Clip {
@@ -44,7 +44,7 @@ impl DrawList {
         self.commands.push(cmd);
     }
 
-    pub fn draw_label<T: Into<LabelParams>>(&mut self, label: &str, position: Point2, params: T) {
+    pub fn draw_label<T: Into<LabelParams>>(&mut self, label: &str, position: Vector2, params: T) {
         if self.clipping_zone.map_or(false, |clip| {
             !clip.overlaps(&Rect::new(position.x - 150., position.y - 25., 200., 50.))
         }) {
@@ -76,7 +76,8 @@ impl DrawList {
             fill: fill.into(),
         })
     }
-    pub fn draw_line<T: Into<Color>>(&mut self, start: Point2, end: Point2, color: T) {
+
+    pub fn draw_line<T: Into<Color>>(&mut self, start: Vector2, end: Vector2, color: T) {
         if self
             .clipping_zone
             .map_or(false, |clip| !clip.contains(start) && !clip.contains(end))

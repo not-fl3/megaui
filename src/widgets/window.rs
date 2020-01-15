@@ -1,5 +1,5 @@
 use crate::{
-    types::{Point2, Rect, Vector2},
+    types::{Vector2, Rect},
     ui::WindowContext,
     Id, Ui,
 };
@@ -7,7 +7,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct Window {
     id: Id,
-    position: Point2,
+    position: Vector2,
     size: Vector2,
     close_button: bool,
     enabled: bool,
@@ -16,7 +16,7 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new(id: Id, position: Point2, size: Vector2) -> Window {
+    pub fn new(id: Id, position: Vector2, size: Vector2) -> Window {
         Window {
             id,
             position,
@@ -86,7 +86,7 @@ impl Window {
         );
         context.window.draw_list.draw_label(
             "X",
-            Point2::new(
+            Vector2::new(
                 context.window.position.x + context.window.size.x - 10.,
                 context.window.position.y + 3.,
             ),
@@ -112,13 +112,13 @@ impl Window {
         if let Some(label) = &self.label {
             context.window.draw_list.draw_label(
                 &label,
-                Point2::new(position.x + style.margin, position.y + style.margin),
+                Vector2::new(position.x + style.margin, position.y + style.margin),
                 context.global_style.title(focused),
             );
         }
         context.window.draw_list.draw_line(
-            Point2::new(position.x, position.y + style.title_height),
-            Point2::new(position.x + size.x, position.y + style.title_height),
+            Vector2::new(position.x, position.y + style.title_height),
+            Vector2::new(position.x + size.x, position.y + style.title_height),
             style.window_border(focused),
         );
     }
@@ -128,7 +128,7 @@ impl Ui {
     pub fn window<F: FnOnce(&mut Ui)>(
         &mut self,
         id: Id,
-        position: Point2,
+        position: Vector2,
         size: Vector2,
         f: F,
     ) -> bool {

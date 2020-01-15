@@ -1,4 +1,4 @@
-use crate::types::{Point2, Rect, Vector2};
+use crate::types::{Vector2, Rect};
 
 #[derive(Clone, Debug)]
 pub struct Scroll {
@@ -29,7 +29,7 @@ impl Scroll {
 pub enum Layout {
     Vertical,
     Horizontal,
-    Free(Point2),
+    Free(Vector2),
 }
 
 #[derive(Debug)]
@@ -74,22 +74,22 @@ impl Cursor {
         self.scroll.inner_rect = Rect::new(0., 0., self.area.w, self.area.h);
     }
 
-    pub fn fit(&mut self, size: Vector2, layout: Layout) -> Point2 {
+    pub fn fit(&mut self, size: Vector2, layout: Layout) -> Vector2 {
         let res;
 
         match layout {
             Layout::Horizontal => {
                 if self.x + size.x < self.area.w as f32 - self.margin * 2. {
-                    res = Point2::new(self.x, self.y);
+                    res = Vector2::new(self.x, self.y);
                 } else {
                     self.x = self.margin;
                     self.y += size.y + self.margin; // TODO: not size.y, but previous row max y, which is currently unknown :(
-                    res = Point2::new(self.x, self.y);
+                    res = Vector2::new(self.x, self.y);
                 }
                 self.x += size.x + self.margin;
             }
             Layout::Vertical => {
-                res = Point2::new(self.x, self.y);
+                res = Vector2::new(self.x, self.y);
                 self.x = self.margin;
                 self.y += size.y + self.margin
             }

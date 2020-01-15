@@ -1,4 +1,16 @@
-use crate::types::{Color, Point2, Rect};
+use crate::types::{Color, Vector2, Rect};
+
+pub trait Context {
+    fn debug_log(&self, _: &str) {}
+
+    fn draw_label<T: Into<LabelParams>>(&mut self, position: Vector2, label: &str, params: T);
+    fn draw_rect<S, T>(&mut self, rect: Rect, stroke: S, fill: T)
+    where
+        S: Into<Option<Color>>,
+        T: Into<Option<Color>>;
+    fn draw_line<T: Into<Color>>(&mut self, start: Vector2, end: Vector2, color: T);
+    fn clip(&mut self, rect: Option<Rect>);
+}
 
 #[derive(Clone, Debug)]
 pub enum Aligment {
@@ -49,14 +61,3 @@ impl From<(Color, Aligment)> for LabelParams {
     }
 }
 
-pub trait Context {
-    fn debug_log(&self, _: &str) {}
-
-    fn draw_label<T: Into<LabelParams>>(&mut self, position: Point2, label: &str, params: T);
-    fn draw_rect<S, T>(&mut self, rect: Rect, stroke: S, fill: T)
-    where
-        S: Into<Option<Color>>,
-        T: Into<Option<Color>>;
-    fn draw_line<T: Into<Color>>(&mut self, start: Point2, end: Point2, color: T);
-    fn clip(&mut self, rect: Option<Rect>);
-}

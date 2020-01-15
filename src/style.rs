@@ -1,69 +1,74 @@
 use crate::types::Color;
 
-use smart_default::SmartDefault;
-
-#[derive(SmartDefault, Clone)]
+#[derive(Debug, Clone)]
 pub struct Style {
-    #[default(2.0)]
     pub margin: f32,
-    #[default(14.0)]
     pub title_height: f32,
 
-    #[default(10.0)]
     pub scroll_width: f32,
-    #[default(3.)]
     pub scroll_multiplier: f32,
 
-    #[default(Color::from_rgb(68, 68, 68))]
     pub window_border_focused: Color,
-    #[default(Color::from_rgba(102, 102, 102, 127))]
     pub window_border_inactive: Color,
 
-    #[default(Color::from_rgba(238, 238, 238, 255))]
     pub window_background_focused: Color,
-    #[default(Color::from_rgba(238, 238, 238, 128))]
     pub window_background_inactive: Color,
 
-    #[default(Color::from_rgba(170, 170, 170, 235))]
     pub scrollbar_background_focused_clicked: Color,
-    #[default(Color::from_rgba(180, 180, 180, 235))]
     pub scrollbar_background_focused_hovered: Color,
-    #[default(Color::from_rgba(204, 204, 204, 235))]
     pub scrollbar_background_focused: Color,
-    #[default(Color::from_rgba(204, 204, 204, 128))]
     pub scrollbar_background_focused_inactive: Color,
 
-    #[default(Color::from_rgba(102, 102, 102, 128))]
     pub inactive_title: Color,
-    #[default(Color::from_rgba(0, 0, 0, 255))]
     pub focused_title: Color,
 
-    #[default(Color::from_rgba(0, 0, 0, 255))]
     pub focused_text: Color,
-    #[default(Color::from_rgba(102, 102, 102, 127))]
     pub inactive_text: Color,
 
-    #[default(3.)]
     pub margin_button: f32,
-    #[default(Color::from_rgba(204, 204, 204, 235))]
     pub button_background_focused: Color,
-    #[default(Color::from_rgba(170, 170, 170, 235))]
     pub button_background_focused_hovered: Color,
-    #[default(Color::from_rgba(187, 187, 187, 255))]
     pub button_background_focused_clicked: Color,
-    #[default(Color::from_rgba(204, 204, 204, 127))]
     pub button_background_inactive: Color,
 
-    #[default(Color::from_rgba(34, 153, 34, 68))]
     pub group_border_focused_hovered: Color,
-    #[default(Color::from_rgba(34, 34, 34, 68))]
     pub group_border_focused: Color,
-    #[default(Color::from_rgba(34, 34, 255, 255))]
     pub group_border_focused_highlight: Color,
-    #[default(Color::from_rgba(17, 136, 17, 34))]
     pub group_border_inactive_hovered: Color,
-    #[default(Color::from_rgba(17, 17, 17, 34))]
     pub group_border_inactive: Color,
+}
+
+impl Default for Style {
+fn default() -> Self {
+    Style {
+        margin: 2.0,
+        title_height: 14.0,
+        scroll_width: 10.0,
+        scroll_multiplier: 3.,
+        window_border_focused: Color::from_rgb(68, 68, 68),
+        window_border_inactive: Color::from_rgba(102, 102, 102, 127),
+        window_background_focused: Color::from_rgba(238, 238, 238, 255),
+        window_background_inactive: Color::from_rgba(238, 238, 238, 128),
+        scrollbar_background_focused_clicked: Color::from_rgba(170, 170, 170, 235),
+        scrollbar_background_focused_hovered: Color::from_rgba(180, 180, 180, 235),
+        scrollbar_background_focused: Color::from_rgba(204, 204, 204, 235),
+        scrollbar_background_focused_inactive: Color::from_rgba(204, 204, 204, 128),
+        inactive_title: Color::from_rgba(102, 102, 102, 128),
+        focused_title: Color::from_rgba(0, 0, 0, 255),
+        focused_text: Color::from_rgba(0, 0, 0, 255),
+        inactive_text: Color::from_rgba(102, 102, 102, 127),
+        margin_button: 3.,
+        button_background_focused: Color::from_rgba(204, 204, 204, 235),
+        button_background_focused_hovered: Color::from_rgba(170, 170, 170, 235),
+        button_background_focused_clicked: Color::from_rgba(187, 187, 187, 255),
+        button_background_inactive: Color::from_rgba(204, 204, 204, 127),
+        group_border_focused_hovered: Color::from_rgba(34, 153, 34, 68),
+        group_border_focused: Color::from_rgba(34, 34, 34, 68),
+        group_border_focused_highlight: Color::from_rgba(34, 34, 255, 255),
+        group_border_inactive_hovered: Color::from_rgba(17, 136, 17, 34),
+        group_border_inactive: Color::from_rgba(17, 17, 17, 34),
+    }
+}
 }
 
 impl Style {

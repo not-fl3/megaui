@@ -1,17 +1,17 @@
 use crate::{
-    types::{Color, Point2, Rect, Vector2},
+    types::{Color, Vector2, Rect},
     Aligment, Id, Layout, Ui,
 };
 
 pub struct Tabbar {
     id: Id,
-    position: Point2,
+    position: Vector2,
     size: Vector2,
     tabs: &'static [&'static str],
 }
 
 impl Tabbar {
-    pub fn new(id: Id, position: Point2, size: Vector2, tabs: &'static [&'static str]) -> Tabbar {
+    pub fn new(id: Id, position: Vector2, size: Vector2, tabs: &'static [&'static str]) -> Tabbar {
         Tabbar {
             id,
             position,
@@ -79,7 +79,7 @@ impl Ui {
     pub fn tabbar(
         &mut self,
         id: Id,
-        position: Point2,
+        position: Vector2,
         size: Vector2,
         tabs: &'static [&'static str],
     ) -> u32 {
