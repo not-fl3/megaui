@@ -1,7 +1,4 @@
-use crate::{
-    types::{Vector2},
-    Layout, Rect, Ui,
-};
+use crate::{types::Vector2, Layout, Rect, Ui};
 
 use std::borrow::Cow;
 

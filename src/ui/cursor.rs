@@ -1,4 +1,4 @@
-use crate::types::{Vector2, Rect};
+use crate::types::{Rect, Vector2};
 
 #[derive(Clone, Debug)]
 pub struct Scroll {

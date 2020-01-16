@@ -51,7 +51,7 @@ impl<'a> TreeNode<'a> {
 
         if *opened == 1 {
             context.window.cursor.ident += 5.;
-            
+
             f(ui);
 
             let context = ui.get_active_window_context();

@@ -1,5 +1,5 @@
 use crate::{
-    types::{Vector2, Rect},
+    types::{Rect, Vector2},
     ui::WindowContext,
     Id, Ui,
 };

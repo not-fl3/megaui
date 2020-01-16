@@ -39,36 +39,36 @@ pub struct Style {
 }
 
 impl Default for Style {
-fn default() -> Self {
-    Style {
-        margin: 2.0,
-        title_height: 14.0,
-        scroll_width: 10.0,
-        scroll_multiplier: 3.,
-        window_border_focused: Color::from_rgb(68, 68, 68),
-        window_border_inactive: Color::from_rgba(102, 102, 102, 127),
-        window_background_focused: Color::from_rgba(238, 238, 238, 255),
-        window_background_inactive: Color::from_rgba(238, 238, 238, 128),
-        scrollbar_background_focused_clicked: Color::from_rgba(170, 170, 170, 235),
-        scrollbar_background_focused_hovered: Color::from_rgba(180, 180, 180, 235),
-        scrollbar_background_focused: Color::from_rgba(204, 204, 204, 235),
-        scrollbar_background_focused_inactive: Color::from_rgba(204, 204, 204, 128),
-        inactive_title: Color::from_rgba(102, 102, 102, 128),
-        focused_title: Color::from_rgba(0, 0, 0, 255),
-        focused_text: Color::from_rgba(0, 0, 0, 255),
-        inactive_text: Color::from_rgba(102, 102, 102, 127),
-        margin_button: 3.,
-        button_background_focused: Color::from_rgba(204, 204, 204, 235),
-        button_background_focused_hovered: Color::from_rgba(170, 170, 170, 235),
-        button_background_focused_clicked: Color::from_rgba(187, 187, 187, 255),
-        button_background_inactive: Color::from_rgba(204, 204, 204, 127),
-        group_border_focused_hovered: Color::from_rgba(34, 153, 34, 68),
-        group_border_focused: Color::from_rgba(34, 34, 34, 68),
-        group_border_focused_highlight: Color::from_rgba(34, 34, 255, 255),
-        group_border_inactive_hovered: Color::from_rgba(17, 136, 17, 34),
-        group_border_inactive: Color::from_rgba(17, 17, 17, 34),
+    fn default() -> Self {
+        Style {
+            margin: 2.0,
+            title_height: 14.0,
+            scroll_width: 10.0,
+            scroll_multiplier: 3.,
+            window_border_focused: Color::from_rgb(68, 68, 68),
+            window_border_inactive: Color::from_rgba(102, 102, 102, 127),
+            window_background_focused: Color::from_rgba(238, 238, 238, 255),
+            window_background_inactive: Color::from_rgba(238, 238, 238, 128),
+            scrollbar_background_focused_clicked: Color::from_rgba(170, 170, 170, 235),
+            scrollbar_background_focused_hovered: Color::from_rgba(180, 180, 180, 235),
+            scrollbar_background_focused: Color::from_rgba(204, 204, 204, 235),
+            scrollbar_background_focused_inactive: Color::from_rgba(204, 204, 204, 128),
+            inactive_title: Color::from_rgba(102, 102, 102, 128),
+            focused_title: Color::from_rgba(0, 0, 0, 255),
+            focused_text: Color::from_rgba(0, 0, 0, 255),
+            inactive_text: Color::from_rgba(102, 102, 102, 127),
+            margin_button: 3.,
+            button_background_focused: Color::from_rgba(204, 204, 204, 235),
+            button_background_focused_hovered: Color::from_rgba(170, 170, 170, 235),
+            button_background_focused_clicked: Color::from_rgba(187, 187, 187, 255),
+            button_background_inactive: Color::from_rgba(204, 204, 204, 127),
+            group_border_focused_hovered: Color::from_rgba(34, 153, 34, 68),
+            group_border_focused: Color::from_rgba(34, 34, 34, 68),
+            group_border_focused_highlight: Color::from_rgba(34, 34, 255, 255),
+            group_border_inactive_hovered: Color::from_rgba(17, 136, 17, 34),
+            group_border_inactive: Color::from_rgba(17, 17, 17, 34),
+        }
     }
-}
 }
 
 impl Style {

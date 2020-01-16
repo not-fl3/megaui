@@ -1,4 +1,4 @@
-use crate::{Color, LabelParams, Vector2, Rect};
+use crate::{Color, Rect, Vector2};
 
 #[derive(Debug, Clone)]
 pub enum DrawCommand {
@@ -20,6 +20,35 @@ pub enum DrawCommand {
     Clip {
         rect: Option<Rect>,
     },
+}
+
+impl DrawCommand {
+    pub fn offset(&self, offset: Vector2) -> DrawCommand {
+        match self.clone() {
+            DrawCommand::DrawLabel {
+                position,
+                label,
+                params,
+            } => DrawCommand::DrawLabel {
+                position: position + offset,
+                label,
+                params,
+            },
+            DrawCommand::DrawRect { rect, stroke, fill } => DrawCommand::DrawRect {
+                rect: rect.offset(offset),
+                stroke,
+                fill,
+            },
+            DrawCommand::DrawLine { start, end, color } => DrawCommand::DrawLine {
+                start: start + offset,
+                end: end + offset,
+                color,
+            },
+            DrawCommand::Clip { rect } => DrawCommand::Clip {
+                rect: rect.map(|rect| rect.offset(offset)),
+            },
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -98,5 +127,54 @@ impl DrawList {
         self.clipping_zone = rect;
 
         self.add_command(DrawCommand::Clip { rect });
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Aligment {
+    Left,
+    Center,
+}
+
+impl Default for Aligment {
+    fn default() -> Aligment {
+        Aligment::Left
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct LabelParams {
+    pub color: Color,
+    pub aligment: Aligment,
+}
+
+impl Default for LabelParams {
+    fn default() -> LabelParams {
+        LabelParams {
+            color: Color::new(0., 0., 0., 1.),
+            aligment: Aligment::default(),
+        }
+    }
+}
+
+impl From<Option<Color>> for LabelParams {
+    fn from(color: Option<Color>) -> LabelParams {
+        LabelParams {
+            color: color.unwrap_or(Color::new(0., 0., 0., 1.)),
+            ..Default::default()
+        }
+    }
+}
+impl From<Color> for LabelParams {
+    fn from(color: Color) -> LabelParams {
+        LabelParams {
+            color,
+            ..Default::default()
+        }
+    }
+}
+impl From<(Color, Aligment)> for LabelParams {
+    fn from((color, aligment): (Color, Aligment)) -> LabelParams {
+        LabelParams { color, aligment }
     }
 }

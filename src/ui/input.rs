@@ -1,4 +1,4 @@
-use crate::types::{Vector2};
+use crate::types::Vector2;
 
 #[derive(Default, Clone)]
 pub struct Input {
