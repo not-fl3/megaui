@@ -7,7 +7,7 @@ mod ui;
 pub mod widgets;
 
 pub use draw_list::DrawCommand;
-pub use input_handler::InputHandler;
+pub use input_handler::{InputHandler, KeyCode};
 pub use style::Style;
 pub use types::{Color, Rect, Vector2};
 pub use ui::{Drag, Layout, Ui};
@@ -32,7 +32,7 @@ macro_rules! hash {
     }};
     ($($s:expr),*) => {{
         let mut s: u128 = 0;
-        $(s += hash!($s) as u128;)*
-        hash!(s)
+        $(s += $crate::hash!($s) as u128;)*
+        $crate::hash!(s)
     }};
 }

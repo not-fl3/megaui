@@ -14,6 +14,9 @@ pub struct Style {
     pub window_background_focused: Color,
     pub window_background_inactive: Color,
 
+    pub editbox_background_focused: Color,
+    pub editbox_background_inactive: Color,
+
     pub scrollbar_background_focused_clicked: Color,
     pub scrollbar_background_focused_hovered: Color,
     pub scrollbar_background_focused: Color,
@@ -49,6 +52,8 @@ impl Default for Style {
             window_border_inactive: Color::from_rgba(102, 102, 102, 127),
             window_background_focused: Color::from_rgba(238, 238, 238, 255),
             window_background_inactive: Color::from_rgba(238, 238, 238, 128),
+            editbox_background_focused: Color::from_rgba(200, 200, 200, 255),
+            editbox_background_inactive: Color::from_rgba(200, 200, 200, 128),
             scrollbar_background_focused_clicked: Color::from_rgba(170, 170, 170, 235),
             scrollbar_background_focused_hovered: Color::from_rgba(180, 180, 180, 235),
             scrollbar_background_focused: Color::from_rgba(204, 204, 204, 235),
@@ -85,6 +90,14 @@ impl Style {
             self.window_background_focused
         } else {
             self.window_background_inactive
+        }
+    }
+
+    pub fn editbox_background(&self, focused: bool) -> Color {
+        if focused {
+            self.editbox_background_focused
+        } else {
+            self.editbox_background_inactive
         }
     }
 

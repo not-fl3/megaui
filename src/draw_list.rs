@@ -17,6 +17,11 @@ pub enum DrawCommand {
         end: Vector2,
         color: Color,
     },
+    DrawRawTexture {
+        position: Vector2,
+        size: Vector2,
+        texture: u32,
+    },
     Clip {
         rect: Option<Rect>,
     },
@@ -33,6 +38,15 @@ impl DrawCommand {
                 position: position + offset,
                 label,
                 params,
+            },
+            DrawCommand::DrawRawTexture {
+                position,
+                size,
+                texture,
+            } => DrawCommand::DrawRawTexture {
+                position: position + offset,
+                size,
+                texture,
             },
             DrawCommand::DrawRect { rect, stroke, fill } => DrawCommand::DrawRect {
                 rect: rect.offset(offset),
@@ -84,6 +98,20 @@ impl DrawList {
             position,
             label: label.to_string(),
             params: params.into(),
+        })
+    }
+
+    pub fn draw_raw_texture(&mut self, texture: u32, position: Vector2, size: Vector2) {
+        if self.clipping_zone.map_or(false, |clip| {
+            !clip.overlaps(&Rect::new(position.x, position.y, size.x, size.y))
+        }) {
+            return;
+        }
+
+        self.add_command(DrawCommand::DrawRawTexture {
+            position,
+            size,
+            texture,
         })
     }
 

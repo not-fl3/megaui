@@ -14,6 +14,7 @@ use cursor::Cursor;
 use input::Input;
 
 pub use cursor::Layout;
+pub use input::InputCharacter;
 
 #[derive(Debug)]
 pub(crate) struct Window {
@@ -132,7 +133,7 @@ pub(crate) struct WindowContext<'a> {
     pub drag_hovered: &'a mut Option<Id>,
     pub storage: &'a mut HashMap<Id, u32>,
     pub global_style: &'a Style,
-    pub input: &'a Input,
+    pub input: &'a mut Input,
     pub focused: bool,
 }
 
@@ -265,6 +266,18 @@ impl InputHandler for Ui {
                 .set_position(Vector2::new(position.x - orig.x, position.y - orig.y));
         }
     }
+
+    fn char_event(&mut self, character: char) {
+        self.input
+            .input_buffer
+            .push(input::InputCharacter::Char(character));
+    }
+
+    fn key_down(&mut self, key: crate::input_handler::KeyCode) {
+        self.input
+            .input_buffer
+            .push(input::InputCharacter::ControlCode(key));
+    }
 }
 
 impl Ui {
@@ -325,7 +338,7 @@ impl Ui {
         WindowContext {
             focused,
             window,
-            input: &self.input,
+            input: &mut self.input,
             global_style: &self.style,
             dragging: &mut self.dragging,
             drag_hovered: &mut self.drag_hovered,
@@ -347,7 +360,7 @@ impl Ui {
         WindowContext {
             window,
             focused,
-            input: &self.input,
+            input: &mut self.input,
             global_style: &self.style,
             dragging: &mut self.dragging,
             drag_hovered: &mut self.drag_hovered,
@@ -427,7 +440,6 @@ impl Ui {
     }
 
     fn render_window(&self, window: &Window, offset: Vector2, draw_list: &mut Vec<DrawCommand>) {
-
         for cmd in &window.draw_list.commands {
             draw_list.push(cmd.offset(offset));
         }
@@ -438,10 +450,9 @@ impl Ui {
                 draw_list.push(DrawCommand::Clip {
                     rect: Some(window.content_rect().offset(offset)),
                 });
-        
+
                 self.render_window(child_window, offset, draw_list);
                 draw_list.push(DrawCommand::Clip { rect: None });
-
             }
         }
     }

@@ -208,7 +208,7 @@ impl Color {
         let gp = (u32::from(g)) << 16;
         let bp = (u32::from(b)) << 8;
         let ap = u32::from(a);
-        (rp | gp | bp | ap)
+        rp | gp | bp | ap
     }
 
     /// Convert a `Color` into a packed `u32`, containing `0x00RRGGBB` as bytes.
@@ -217,7 +217,7 @@ impl Color {
         let rp = (u32::from(r)) << 16;
         let gp = (u32::from(g)) << 8;
         let bp = u32::from(b);
-        (rp | gp | bp)
+        rp | gp | bp
     }
 }
 
