@@ -12,6 +12,7 @@ pub struct Window {
     close_button: bool,
     enabled: bool,
     force_focus: bool,
+    movable: bool,
     label: Option<String>,
 }
 
@@ -24,6 +25,7 @@ impl Window {
             close_button: false,
             enabled: true,
             force_focus: false,
+            movable: true,
             label: None,
         }
     }
@@ -31,6 +33,13 @@ impl Window {
     pub fn label(self, label: &str) -> Window {
         Window {
             label: Some(label.to_string()),
+            ..self
+        }
+    }
+
+    pub fn movable(self, movable: bool) -> Window {
+        Window {
+            movable, 
             ..self
         }
     }
@@ -54,7 +63,7 @@ impl Window {
     }
 
     pub fn ui<F: FnOnce(&mut Ui)>(self, ui: &mut Ui, f: F) -> bool {
-        let mut context = ui.begin_window(self.id, None, self.position, self.size);
+        let mut context = ui.begin_window(self.id, None, self.position, self.size, self.movable);
 
         self.draw_window_frame(&mut context);
         if self.close_button && self.draw_close_button(&mut context) {

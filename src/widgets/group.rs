@@ -59,7 +59,7 @@ impl Group {
         let rect = Rect::new(pos.x, pos.y, self.size.x, self.size.y);
         let parent_id = Some(parent.window.id);
 
-        let mut context = ui.begin_window(self.id, parent_id, pos, self.size);
+        let mut context = ui.begin_window(self.id, parent_id, pos, self.size, true);
 
         let hovered =
             (self.hoverable || self.draggable) && rect.contains(context.input.mouse_position);

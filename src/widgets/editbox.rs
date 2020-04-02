@@ -7,7 +7,6 @@ use crate::{
 
 pub struct Editbox {
     id: Id,
-    position: Vector2,
     size: Vector2,
     line_height: f32,
 }
@@ -22,10 +21,9 @@ fn current_cursor_x_postion(text: &str, mut cursor: u32) -> u32 {
 }
 
 impl Editbox {
-    pub fn new(id: Id, position: Vector2, size: Vector2) -> Editbox {
+    pub fn new(id: Id, size: Vector2) -> Editbox {
         Editbox {
             id,
-            position,
             size,
             line_height: 14.0,
         }
@@ -129,12 +127,12 @@ impl Editbox {
         let pos = context
             .window
             .cursor
-            .fit(self.size, Layout::Free(self.position));
+            .fit(self.size, Layout::Vertical);
 
         context.window.draw_list.draw_rect(
             Rect::new(
-                self.position.x + pos.x,
-                self.position.y + pos.y,
+                pos.x,
+                pos.y,
                 self.size.x,
                 self.size.y,
             ),
@@ -146,11 +144,11 @@ impl Editbox {
         parent.window.childs.push(self.id);
         let parent_id = Some(parent.window.id);
 
-        let mut context = ui.begin_window(self.id, parent_id, pos, self.size);
+        let mut context = ui.begin_window(self.id, parent_id, pos, self.size, false);
 
         let size = Vector2::new(150., self.line_height * text.split('\n').count() as f32);
 
-        let pos = context.window.cursor.fit(size, Layout::Free(self.position));
+        let pos = context.window.cursor.fit(size, Layout::Free(Vector2::new(5., 5.)));
 
         context.window.draw_list.clip(context.window.content_rect());
 
@@ -193,7 +191,7 @@ impl Editbox {
 }
 
 impl Ui {
-    pub fn editbox(&mut self, id: Id, position: Vector2, size: Vector2, text: &mut String) {
-        Editbox::new(id, position, size).ui(self, text)
+    pub fn editbox(&mut self, id: Id, size: Vector2, text: &mut String) {
+        Editbox::new(id, size).ui(self, text)
     }
 }

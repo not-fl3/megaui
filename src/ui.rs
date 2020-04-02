@@ -26,10 +26,11 @@ pub(crate) struct Window {
     pub title_height: f32,
     pub position: Vector2,
     pub size: Vector2,
+    pub movable: bool,
     pub draw_list: DrawList,
     pub cursor: Cursor,
     pub childs: Vec<Id>,
-    pub want_close: bool,
+    pub want_close: bool,    
 }
 impl Window {
     pub fn new(
@@ -39,6 +40,7 @@ impl Window {
         size: Vector2,
         title_height: f32,
         margin: f32,
+        movable: bool,
     ) -> Window {
         Window {
             id,
@@ -61,6 +63,7 @@ impl Window {
             ),
             childs: vec![],
             want_close: false,
+            movable,
         }
     }
 
@@ -230,7 +233,7 @@ impl InputHandler for Ui {
                 continue;
             }
 
-            if window.top_level() && window.title_rect().contains(position) {
+            if window.top_level() && window.title_rect().contains(position) && window.movable {
                 self.moving = Some((
                     window.id,
                     position - Vector2::new(window.position.x, window.position.y),
@@ -281,10 +284,10 @@ impl InputHandler for Ui {
 }
 
 impl Ui {
-    pub fn new(style: Style) -> Ui {
+    pub fn new() -> Ui {
         Ui {
             input: Input::default(),
-            style,
+            style: Style::default(),
             frame: 0,
             moving: None,
             windows: HashMap::default(),
@@ -297,12 +300,17 @@ impl Ui {
         }
     }
 
+    pub fn set_style(&mut self, style: Style) {
+        self.style = style;
+    }
+
     pub(crate) fn begin_window(
         &mut self,
         id: Id,
         parent: Option<Id>,
         position: Vector2,
         size: Vector2,
+        movable: bool
     ) -> WindowContext {
         if let Some(active_window) = self.active_window {
             self.child_window_stack.push(active_window);
@@ -322,7 +330,7 @@ impl Ui {
             if parent.is_none() {
                 windows_focus_order.push(id);
             }
-            Window::new(id, parent, position, size, title_height, margin)
+            Window::new(id, parent, position, size, title_height, margin, movable)
         });
 
         window.size = size;
