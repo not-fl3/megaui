@@ -47,7 +47,10 @@ impl Editbox {
 
                 match character {
                     InputCharacter::Char(character) => {
-                        if character != 13 as char && character != 10 as char {
+                        if character != 13 as char
+                            && character != 10 as char
+                            && character.is_ascii()
+                        {
                             text.insert(*cursor as usize, character);
                             *cursor += 1;
                         }
@@ -124,18 +127,10 @@ impl Editbox {
         }
 
         let color = context.global_style.text(context.focused);
-        let pos = context
-            .window
-            .cursor
-            .fit(self.size, Layout::Vertical);
+        let pos = context.window.cursor.fit(self.size, Layout::Vertical);
 
         context.window.draw_list.draw_rect(
-            Rect::new(
-                pos.x,
-                pos.y,
-                self.size.x,
-                self.size.y,
-            ),
+            Rect::new(pos.x, pos.y, self.size.x, self.size.y),
             context.global_style.editbox_background(context.focused),
             None,
         );
@@ -148,7 +143,10 @@ impl Editbox {
 
         let size = Vector2::new(150., self.line_height * text.split('\n').count() as f32);
 
-        let pos = context.window.cursor.fit(size, Layout::Free(Vector2::new(5., 5.)));
+        let pos = context
+            .window
+            .cursor
+            .fit(size, Layout::Free(Vector2::new(5., 5.)));
 
         context.window.draw_list.clip(context.window.content_rect());
 
