@@ -1,11 +1,15 @@
 use crate::{Color, Rect, Vector2};
 
+use miniquad_text_rusttype::FontAtlas;
+
+use std::rc::Rc;
+
 #[derive(Debug, Clone)]
 pub(crate) enum DrawCommand {
-    DrawLabel {
-        position: Vector2,
-        label: String,
-        params: LabelParams,
+    DrawCharacter {
+        dest: Rect,
+        source: Rect,
+        color: Color,
     },
     DrawRect {
         rect: Rect,
@@ -30,14 +34,14 @@ pub(crate) enum DrawCommand {
 impl DrawCommand {
     pub fn offset(&self, offset: Vector2) -> DrawCommand {
         match self.clone() {
-            DrawCommand::DrawLabel {
-                position,
-                label,
-                params,
-            } => DrawCommand::DrawLabel {
-                position: position + offset,
-                label,
-                params,
+            DrawCommand::DrawCharacter {
+                dest,
+                source,
+                color,
+            } => DrawCommand::DrawCharacter {
+                dest: dest.offset(offset),
+                source,
+                color,
             },
             DrawCommand::DrawRawTexture {
                 position,
@@ -65,17 +69,18 @@ impl DrawCommand {
     }
 }
 
-#[derive(Debug)]
 pub(crate) struct CommandsList {
     pub commands: Vec<DrawCommand>,
     clipping_zone: Option<Rect>,
+    font_atlas: Rc<FontAtlas>,
 }
 
 impl CommandsList {
-    pub fn new() -> CommandsList {
+    pub fn new(font_atlas: Rc<FontAtlas>) -> CommandsList {
         CommandsList {
             commands: vec![],
             clipping_zone: None,
+            font_atlas,
         }
     }
 
@@ -95,11 +100,37 @@ impl CommandsList {
             return;
         }
 
-        self.add_command(DrawCommand::DrawLabel {
-            position,
-            label: label.to_string(),
-            params: params.into(),
-        })
+        let params = params.into();
+
+        let mut total_width = 0.;
+        for character in label.chars() {
+            if let Some(font_data) = self.font_atlas.character_infos.get(&character) {
+                let font_data = font_data.scale(self.font_atlas.font_size as f32);
+
+                total_width += font_data.left_padding;
+
+                let left_coord = total_width;
+                let top_coord = self.font_atlas.font_size as f32 - font_data.height_over_line;
+
+                let cmd = DrawCommand::DrawCharacter {
+                    dest: Rect::new(
+                        left_coord + position.x,
+                        top_coord + position.y - 5.,
+                        font_data.size.0,
+                        font_data.size.1,
+                    ),
+                    source: Rect::new(
+                        font_data.tex_coords.0,
+                        font_data.tex_coords.1,
+                        font_data.tex_size.0,
+                        font_data.tex_size.1,
+                    ),
+                    color: params.color,
+                };
+                total_width += font_data.size.0 + font_data.right_padding;
+                self.add_command(cmd);
+            }
+        }
     }
 
     pub fn draw_raw_texture(&mut self, texture: u32, position: Vector2, size: Vector2) {

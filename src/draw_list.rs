@@ -58,7 +58,11 @@ impl DrawList {
     pub fn draw_rectangle_lines(&mut self, rect: Rect, color: Color) {
         let Rect { x, y, w, h } = rect;
 
-        self.draw_rectangle(Rect { x, y, w, h: 1. }, color);
+        self.draw_rectangle(
+            Rect { x, y, w, h: 1. },
+            Rect::new(0., 0., 0., 0.),
+            color,
+        );
         self.draw_rectangle(
             Rect {
                 x: x + w - 1.,
@@ -66,6 +70,7 @@ impl DrawList {
                 w: 1.,
                 h: h - 2.,
             },
+            Rect::new(0., 0., 0., 0.),
             color,
         );
         self.draw_rectangle(
@@ -75,6 +80,7 @@ impl DrawList {
                 w,
                 h: 1.,
             },
+            Rect::new(0., 0., 0., 0.),
             color,
         );
         self.draw_rectangle(
@@ -84,19 +90,20 @@ impl DrawList {
                 w: 1.,
                 h: h - 2.,
             },
+            Rect::new(0., 0., 0., 0.),
             color,
         );
     }
 
-    fn draw_rectangle(&mut self, rect: Rect, color: Color) {
+    fn draw_rectangle(&mut self, rect: Rect, src: Rect, color: Color) {
         let Rect { x, y, w, h } = rect;
 
         #[rustfmt::skip]
         let vertices = [
-            Vertex::new(x    , y    , 0.0, 1.0, color),
-            Vertex::new(x + w, y    , 1.0, 0.0, color),
-            Vertex::new(x + w, y + h, 1.0, 1.0, color),
-            Vertex::new(x    , y + h, 0.0, 0.0, color),
+            Vertex::new(x    , y    , src.x        , src.y        , color),
+            Vertex::new(x + w, y    , src.x + src.w, src.y        , color),
+            Vertex::new(x + w, y + h, src.x + src.w, src.y + src.h, color),
+            Vertex::new(x    , y + h, src.x        , src.y + src.h, color),
         ];
         let indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
@@ -105,7 +112,6 @@ impl DrawList {
         self.indices
             .extend(indices.iter().map(|i| i + indices_offset));
     }
-
 
     pub fn draw_line(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, thickness: f32, color: Color) {
         let dx = x2 - x1;
@@ -120,13 +126,12 @@ impl DrawList {
         let tx = nx / tlen;
         let ty = ny / tlen;
 
-        
         let vertices = &[
-                Vertex::new(x1 + tx, y1 + ty, 0., 0., color),
-                Vertex::new(x1 - tx, y1 - ty, 0., 0., color),
-                Vertex::new(x2 + tx, y2 + ty, 0., 0., color),
-                Vertex::new(x2 - tx, y2 - ty, 0., 0., color),
-            ];
+            Vertex::new(x1 + tx, y1 + ty, 0., 0., color),
+            Vertex::new(x1 - tx, y1 - ty, 0., 0., color),
+            Vertex::new(x2 + tx, y2 + ty, 0., 0., color),
+            Vertex::new(x2 - tx, y2 - ty, 0., 0., color),
+        ];
         let indices = &[0, 1, 2, 2, 1, 3];
 
         let indices_offset = self.vertices.len() as u16;
@@ -156,7 +161,7 @@ fn get_active_draw_list<'a, 'b>(
                 draw_lists.push(DrawList::new());
             }
         }
-        DrawCommand::DrawLabel { .. }
+        DrawCommand::DrawCharacter { .. }
         | DrawCommand::DrawLine { .. }
         | DrawCommand::DrawRect { .. } => {
             if last.texture != None {
@@ -176,7 +181,7 @@ pub(crate) fn render_command(draw_lists: &mut Vec<DrawList>, command: DrawComman
         }
         DrawCommand::DrawRect { rect, fill, stroke } => {
             if let Some(fill) = fill {
-                active_draw_list.draw_rectangle(rect, fill);
+                active_draw_list.draw_rectangle(rect, Rect::new(0., 0., 0., 0.), fill);
             }
             if let Some(stroke) = stroke {
                 active_draw_list.draw_rectangle_lines(rect, stroke);
@@ -184,6 +189,13 @@ pub(crate) fn render_command(draw_lists: &mut Vec<DrawList>, command: DrawComman
         }
         DrawCommand::DrawLine { start, end, color } => {
             active_draw_list.draw_line(start.x, start.y, end.x, end.y, 1., color);
+        }
+        DrawCommand::DrawCharacter {
+            dest,
+            source,
+            color,
+        } => {
+            active_draw_list.draw_rectangle(dest, source, color);
         }
         _ => {}
     }

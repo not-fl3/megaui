@@ -6,7 +6,8 @@ use crate::{
     Id, InputHandler, Style,
 };
 
-use std::collections::HashMap;
+use miniquad_text_rusttype::FontAtlas;
+use std::{collections::HashMap, rc::Rc};
 
 mod cursor;
 mod input;
@@ -16,7 +17,6 @@ use input::Input;
 pub use cursor::Layout;
 pub use input::InputCharacter;
 
-#[derive(Debug)]
 pub(crate) struct Window {
     pub id: Id,
     pub parent: Option<Id>,
@@ -41,6 +41,7 @@ impl Window {
         title_height: f32,
         margin: f32,
         movable: bool,
+        font_atlas: Rc<FontAtlas>,
     ) -> Window {
         Window {
             id,
@@ -51,7 +52,7 @@ impl Window {
             visible: true,
             was_active: false,
             active: false,
-            draw_commands: CommandsList::new(),
+            draw_commands: CommandsList::new(font_atlas),
             cursor: Cursor::new(
                 Rect::new(
                     position.x,
@@ -128,6 +129,8 @@ pub struct Ui {
     drag_hovered: Option<Id>,
     active_window: Option<Id>,
     child_window_stack: Vec<Id>,
+
+    pub font_atlas: Rc<FontAtlas>,
 }
 
 pub(crate) struct WindowContext<'a> {
@@ -285,6 +288,22 @@ impl InputHandler for Ui {
 
 impl Ui {
     pub fn new() -> Ui {
+        let mut font_atlas = FontAtlas::new(
+            &include_bytes!("../assets/Karla-Regular.ttf")[..],
+            15,
+            FontAtlas::ascii_character_list(),
+        )
+        .unwrap();
+
+        let white_square = [(0, 0), (1, 0), (1, 1), (0, 1)];
+        let w = font_atlas.texture.width;
+        for pixel in white_square.iter() {
+            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 0) as usize] = 255;
+            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 1) as usize] = 255;
+            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 2) as usize] = 255;
+            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 3) as usize] = 255;
+        }
+
         Ui {
             input: Input::default(),
             style: Style::default(),
@@ -297,6 +316,7 @@ impl Ui {
             child_window_stack: vec![],
             drag_hovered: None,
             storage: HashMap::default(),
+            font_atlas: Rc::new(font_atlas),
         }
     }
 
@@ -324,13 +344,23 @@ impl Ui {
             0.
         };
         let margin = self.style.margin;
+        let font_atlas = self.font_atlas.clone();
         let windows_focus_order = &mut self.windows_focus_order;
 
         let window = &mut *self.windows.entry(id).or_insert_with(|| {
             if parent.is_none() {
                 windows_focus_order.push(id);
             }
-            Window::new(id, parent, position, size, title_height, margin, movable)
+            Window::new(
+                id,
+                parent,
+                position,
+                size,
+                title_height,
+                margin,
+                movable,
+                font_atlas,
+            )
         });
 
         window.size = size;

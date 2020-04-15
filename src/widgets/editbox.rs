@@ -164,7 +164,7 @@ impl Editbox {
             let character = text.chars().nth(n).unwrap_or(' ');
             if n == cursor as usize {
                 context.window.draw_commands.draw_rect(
-                    Rect::new(pos.x + x, pos.y + y, 2., 8.),
+                    Rect::new(pos.x + x, pos.y + y, 2., 13.),
                     Color::new(0., 0., 0., 1.),
                     None,
                 );
