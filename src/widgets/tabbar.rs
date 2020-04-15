@@ -1,5 +1,5 @@
 use crate::{
-    draw_list::Aligment,
+    draw_command::Aligment,
     types::{Color, Rect, Vector2},
     Id, Layout, Ui,
 };
@@ -45,7 +45,7 @@ impl Tabbar {
             if context.focused && hovered && context.input.click_up {
                 *context.storage.entry(self.id).or_insert(0) = n as u32;
             }
-            context.window.draw_list.draw_rect(
+            context.window.draw_commands.draw_rect(
                 rect,
                 None,
                 context.global_style.tabbar_background(
@@ -56,7 +56,7 @@ impl Tabbar {
                 ),
             );
 
-            context.window.draw_list.draw_label(
+            context.window.draw_commands.draw_label(
                 label,
                 pos + Vector2::new(
                     width * n as f32 + width / 2.,

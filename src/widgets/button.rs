@@ -48,7 +48,7 @@ impl<'a> Button<'a> {
         let rect = Rect::new(pos.x, pos.y, size.x as f32, size.y as f32);
         let hovered = rect.contains(context.input.mouse_position);
 
-        context.window.draw_list.draw_rect(
+        context.window.draw_commands.draw_rect(
             rect,
             None,
             context.global_style.button_background(
@@ -57,7 +57,7 @@ impl<'a> Button<'a> {
                 hovered && context.input.is_mouse_down,
             ),
         );
-        context.window.draw_list.draw_label(
+        context.window.draw_commands.draw_label(
             &self.label,
             pos + Vector2::new(
                 context.global_style.margin_button,

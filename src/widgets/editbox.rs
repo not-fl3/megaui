@@ -129,7 +129,7 @@ impl Editbox {
         let color = context.global_style.text(context.focused);
         let pos = context.window.cursor.fit(self.size, Layout::Vertical);
 
-        context.window.draw_list.draw_rect(
+        context.window.draw_commands.draw_rect(
             Rect::new(pos.x, pos.y, self.size.x, self.size.y),
             context.global_style.editbox_background(context.focused),
             None,
@@ -148,7 +148,10 @@ impl Editbox {
             .cursor
             .fit(size, Layout::Free(Vector2::new(5., 5.)));
 
-        context.window.draw_list.clip(context.window.content_rect());
+        context
+            .window
+            .draw_commands
+            .clip(context.window.content_rect());
 
         context.scroll_area();
 
@@ -160,14 +163,14 @@ impl Editbox {
         for n in 0..text.len() + 1 {
             let character = text.chars().nth(n).unwrap_or(' ');
             if n == cursor as usize {
-                context.window.draw_list.draw_rect(
+                context.window.draw_commands.draw_rect(
                     Rect::new(pos.x + x, pos.y + y, 2., 8.),
                     Color::new(0., 0., 0., 1.),
                     None,
                 );
             }
             if character != '\n' {
-                context.window.draw_list.draw_label(
+                context.window.draw_commands.draw_label(
                     &character.to_string(),
                     pos + Vector2::new(x, y),
                     color,
@@ -182,7 +185,7 @@ impl Editbox {
 
         let context = ui.get_active_window_context();
 
-        context.window.draw_list.clip(None);
+        context.window.draw_commands.clip(None);
 
         ui.end_window();
     }

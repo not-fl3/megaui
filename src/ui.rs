@@ -1,5 +1,6 @@
 use crate::{
-    draw_list::{DrawCommand, DrawList},
+    draw_command::{CommandsList, DrawCommand},
+    draw_list::DrawList,
     types::Rect,
     types::Vector2,
     Id, InputHandler, Style,
@@ -9,7 +10,6 @@ use std::collections::HashMap;
 
 mod cursor;
 mod input;
-
 use cursor::Cursor;
 use input::Input;
 
@@ -27,10 +27,10 @@ pub(crate) struct Window {
     pub position: Vector2,
     pub size: Vector2,
     pub movable: bool,
-    pub draw_list: DrawList,
+    pub draw_commands: CommandsList,
     pub cursor: Cursor,
     pub childs: Vec<Id>,
-    pub want_close: bool,    
+    pub want_close: bool,
 }
 impl Window {
     pub fn new(
@@ -51,7 +51,7 @@ impl Window {
             visible: true,
             was_active: false,
             active: false,
-            draw_list: DrawList::new(),
+            draw_commands: CommandsList::new(),
             cursor: Cursor::new(
                 Rect::new(
                     position.x,
@@ -175,7 +175,7 @@ impl<'a> WindowContext<'a> {
         let size = scroll.rect.h / inner_rect.h * rect.h;
         let pos = (scroll.rect.y - inner_rect.y) / inner_rect.h * rect.h;
 
-        self.window.draw_list.draw_line(
+        self.window.draw_commands.draw_line(
             Vector2::new(rect.x, rect.y),
             Vector2::new(rect.x, rect.y + rect.h),
             self.global_style.window_border(self.focused),
@@ -209,7 +209,7 @@ impl<'a> WindowContext<'a> {
             );
         }
 
-        self.window.draw_list.draw_rect(
+        self.window.draw_commands.draw_rect(
             bar,
             None,
             self.global_style
@@ -310,7 +310,7 @@ impl Ui {
         parent: Option<Id>,
         position: Vector2,
         size: Vector2,
-        movable: bool
+        movable: bool,
     ) -> WindowContext {
         if let Some(active_window) = self.active_window {
             self.child_window_stack.push(active_window);
@@ -422,7 +422,7 @@ impl Ui {
         self.frame += 1;
 
         for (_, window) in &mut self.windows {
-            window.draw_list.clear();
+            window.draw_commands.clear();
             window.cursor.reset();
             window.was_active = window.active;
             window.active = false;
@@ -430,7 +430,7 @@ impl Ui {
         }
     }
 
-    pub fn render(&mut self, draw_list: &mut Vec<DrawCommand>) {
+    pub fn render(&mut self, draw_list: &mut Vec<DrawList>) {
         for window in self.windows_focus_order.iter().rev() {
             let window = &self.windows[window];
             if window.was_active {
@@ -447,20 +447,22 @@ impl Ui {
         self.end_frame();
     }
 
-    fn render_window(&self, window: &Window, offset: Vector2, draw_list: &mut Vec<DrawCommand>) {
-        for cmd in &window.draw_list.commands {
-            draw_list.push(cmd.offset(offset));
+    fn render_window(&self, window: &Window, offset: Vector2, draw_list: &mut Vec<DrawList>) {
+        for cmd in &window.draw_commands.commands {
+            crate::draw_list::render_command(draw_list, cmd.offset(offset));
         }
 
         for child in &window.childs {
             let child_window = &self.windows[child];
             if window.content_rect().overlaps(&child_window.full_rect()) {
-                draw_list.push(DrawCommand::Clip {
-                    rect: Some(window.content_rect().offset(offset)),
-                });
-
+                crate::draw_list::render_command(
+                    draw_list,
+                    DrawCommand::Clip {
+                        rect: Some(window.content_rect().offset(offset)),
+                    },
+                );
                 self.render_window(child_window, offset, draw_list);
-                draw_list.push(DrawCommand::Clip { rect: None });
+                crate::draw_list::render_command(draw_list, DrawCommand::Clip { rect: None });
             }
         }
     }

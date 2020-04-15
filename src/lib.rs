@@ -1,3 +1,4 @@
+mod draw_command;
 mod draw_list;
 mod input_handler;
 mod style;
@@ -6,7 +7,7 @@ mod ui;
 
 pub mod widgets;
 
-pub use draw_list::DrawCommand;
+pub use draw_list::{DrawList, Vertex};
 pub use input_handler::{InputHandler, KeyCode};
 pub use style::Style;
 pub use types::{Color, Rect, Vector2};

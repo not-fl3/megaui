@@ -42,11 +42,11 @@ impl<'a> TreeNode<'a> {
 
         context
             .window
-            .draw_list
+            .draw_commands
             .draw_label(if *opened == 0 { "+" } else { "-" }, pos, color);
         context
             .window
-            .draw_list
+            .draw_commands
             .draw_label(&*self.label, pos + Vector2::new(10., 0.), color);
 
         if *opened == 1 {

@@ -50,7 +50,7 @@ impl<'a> Label<'a> {
             .fit(size, self.position.map_or(Layout::Vertical, Layout::Free));
         if let Some(line_height) = self.multiline {
             for (n, line) in self.label.split('\n').enumerate() {
-                context.window.draw_list.draw_label(
+                context.window.draw_commands.draw_label(
                     line,
                     pos + Vector2::new(0., n as f32 * line_height),
                     color,
@@ -59,7 +59,7 @@ impl<'a> Label<'a> {
         } else {
             context
                 .window
-                .draw_list
+                .draw_commands
                 .draw_label(&*self.label, pos, color)
         }
     }

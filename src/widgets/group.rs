@@ -97,7 +97,7 @@ impl Group {
             }
         }
 
-        context.window.draw_list.draw_rect(
+        context.window.draw_commands.draw_rect(
             rect,
             context
                 .global_style
@@ -106,14 +106,14 @@ impl Group {
         );
 
         let clip_rect = context.window.content_rect();
-        context.window.draw_list.clip(clip_rect);
+        context.window.draw_commands.clip(clip_rect);
         context.scroll_area();
 
         f(ui);
 
         let context = ui.get_active_window_context();
 
-        context.window.draw_list.clip(None);
+        context.window.draw_commands.clip(None);
 
         if context.focused && self.draggable {
             if

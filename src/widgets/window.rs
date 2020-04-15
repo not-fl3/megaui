@@ -38,10 +38,7 @@ impl Window {
     }
 
     pub fn movable(self, movable: bool) -> Window {
-        Window {
-            movable, 
-            ..self
-        }
+        Window { movable, ..self }
     }
 
     pub fn close_button(self, close_button: bool) -> Window {
@@ -71,13 +68,13 @@ impl Window {
         }
 
         let clip_rect = context.window.content_rect();
-        context.window.draw_list.clip(clip_rect);
+        context.window.draw_commands.clip(clip_rect);
         context.scroll_area();
 
         f(ui);
 
         let context = ui.get_active_window_context();
-        context.window.draw_list.clip(None);
+        context.window.draw_commands.clip(None);
 
         let opened = context.window.want_close == false;
 
@@ -93,7 +90,7 @@ impl Window {
             20.,
             20.,
         );
-        context.window.draw_list.draw_label(
+        context.window.draw_commands.draw_label(
             "X",
             Vector2::new(
                 context.window.position.x + context.window.size.x - 10.,
@@ -112,20 +109,20 @@ impl Window {
         let position = context.window.position;
         let size = context.window.size;
 
-        context.window.draw_list.draw_rect(
+        context.window.draw_commands.draw_rect(
             Rect::new(position.x, position.y, size.x, size.y),
             style.window_border(focused),
             style.background(focused),
         );
 
         if let Some(label) = &self.label {
-            context.window.draw_list.draw_label(
+            context.window.draw_commands.draw_label(
                 &label,
                 Vector2::new(position.x + style.margin, position.y + style.margin),
                 context.global_style.title(focused),
             );
         }
-        context.window.draw_list.draw_line(
+        context.window.draw_commands.draw_line(
             Vector2::new(position.x, position.y + style.title_height),
             Vector2::new(position.x + size.x, position.y + style.title_height),
             style.window_border(focused),
