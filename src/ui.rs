@@ -347,10 +347,17 @@ impl Ui {
         let font_atlas = self.font_atlas.clone();
         let windows_focus_order = &mut self.windows_focus_order;
 
+        let parent_clip_rect = if let Some(parent) = parent {
+            self.windows.get(&parent).and_then(|window| window.draw_commands.clipping_zone)
+        } else {
+            None
+        };
+
         let window = &mut *self.windows.entry(id).or_insert_with(|| {
             if parent.is_none() {
                 windows_focus_order.push(id);
             }
+
             Window::new(
                 id,
                 parent,
@@ -366,6 +373,7 @@ impl Ui {
         window.size = size;
         window.want_close = false;
         window.active = true;
+        window.draw_commands.clipping_zone = parent_clip_rect;
 
         // top level windows are moveble, so we update their position only on the first frame
         // while the child windows are not moveble and should update their position each frame
@@ -485,14 +493,7 @@ impl Ui {
         for child in &window.childs {
             let child_window = &self.windows[child];
             if window.content_rect().overlaps(&child_window.full_rect()) {
-                crate::draw_list::render_command(
-                    draw_list,
-                    DrawCommand::Clip {
-                        rect: Some(window.content_rect().offset(offset)),
-                    },
-                );
                 self.render_window(child_window, offset, draw_list);
-                crate::draw_list::render_command(draw_list, DrawCommand::Clip { rect: None });
             }
         }
     }

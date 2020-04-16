@@ -97,6 +97,9 @@ impl Group {
             }
         }
 
+
+        let clip_rect = context.window.content_rect();
+        context.window.draw_commands.clip(clip_rect);
         context.window.draw_commands.draw_rect(
             rect,
             context
@@ -105,8 +108,6 @@ impl Group {
             None,
         );
 
-        let clip_rect = context.window.content_rect();
-        context.window.draw_commands.clip(clip_rect);
         context.scroll_area();
 
         f(ui);

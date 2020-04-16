@@ -39,7 +39,7 @@ impl<'a> Button<'a> {
         // TODO: document somewhere that draw_label assumes monospaces font with fixed size
         let size = self
             .size
-            .unwrap_or(Vector2::new(self.label.len() as f32 * 10. + 5., 14.));
+            .unwrap_or(Vector2::new(self.label.len() as f32 * 8. + 5., 17.));
 
         let pos = context
             .window

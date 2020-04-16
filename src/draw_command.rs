@@ -71,7 +71,7 @@ impl DrawCommand {
 
 pub(crate) struct CommandsList {
     pub commands: Vec<DrawCommand>,
-    clipping_zone: Option<Rect>,
+    pub clipping_zone: Option<Rect>,
     font_atlas: Rc<FontAtlas>,
 }
 
@@ -181,12 +181,18 @@ impl CommandsList {
         });
     }
 
+    #[rustfmt::skip]
     pub fn clip<T: Into<Option<Rect>>>(&mut self, rect: T) {
         let rect = rect.into();
 
-        self.clipping_zone = rect;
+        self.clipping_zone = if let Some(rect) = rect {
+            Some(self.clipping_zone.and_then(|old_rect| old_rect.intersect(rect)).unwrap_or(rect))
+        } else {
+            None
+        };
 
-        self.add_command(DrawCommand::Clip { rect });
+
+        self.add_command(DrawCommand::Clip { rect: self.clipping_zone });
     }
 }
 

@@ -134,6 +134,24 @@ impl Rect {
         Rect { x, y, w, h }
     }
 
+    pub fn intersect(&self, other: Rect) -> Option<Rect> {
+        let left = self.x.max(other.x);
+        let top = self.y.max(other.y);
+        let right = self.right().min(other.right());
+        let bottom = self.bottom().min(other.bottom());
+
+        if right < left || bottom < top {
+            return None;
+        }
+
+        Some(Rect {
+            x: left,
+            y: top,
+            w: right - left,
+            h: bottom - top,
+        })
+    }
+
     pub fn offset(self, offset: Vector2) -> Rect {
         Rect::new(self.x + offset.x, self.y + offset.y, self.w, self.h)
     }

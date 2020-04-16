@@ -157,7 +157,7 @@ impl Editbox {
 
         let cursor = *context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
 
-        let mut x = 10.;
+        let mut x = 9.;
         let mut y = 0.;
 
         for n in 0..text.len() + 1 {
@@ -176,10 +176,10 @@ impl Editbox {
                     color,
                 );
             }
-            x += 10.;
+            x += 9.;
             if character == '\n' {
                 y += self.line_height;
-                x = 10.;
+                x = 9.;
             }
         }
 

@@ -58,11 +58,7 @@ impl DrawList {
     pub fn draw_rectangle_lines(&mut self, rect: Rect, color: Color) {
         let Rect { x, y, w, h } = rect;
 
-        self.draw_rectangle(
-            Rect { x, y, w, h: 1. },
-            Rect::new(0., 0., 0., 0.),
-            color,
-        );
+        self.draw_rectangle(Rect { x, y, w, h: 1. }, Rect::new(0., 0., 0., 0.), color);
         self.draw_rectangle(
             Rect {
                 x: x + w - 1.,
