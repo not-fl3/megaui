@@ -1,9 +1,6 @@
 use crate::{
-    draw_command::{CommandsList, DrawCommand},
-    draw_list::DrawList,
-    types::Rect,
-    types::Vector2,
-    Id, InputHandler, Style,
+    draw_command::CommandsList, draw_list::DrawList, types::Rect, types::Vector2, Id, InputHandler,
+    Style,
 };
 
 use miniquad_text_rusttype::FontAtlas;
@@ -289,8 +286,8 @@ impl InputHandler for Ui {
 impl Ui {
     pub fn new() -> Ui {
         let mut font_atlas = FontAtlas::new(
-            &include_bytes!("../assets/Karla-Regular.ttf")[..],
-            15,
+            &include_bytes!("../assets/ProggyClean.ttf")[..],
+            13,
             FontAtlas::ascii_character_list(),
         )
         .unwrap();
@@ -348,7 +345,9 @@ impl Ui {
         let windows_focus_order = &mut self.windows_focus_order;
 
         let parent_clip_rect = if let Some(parent) = parent {
-            self.windows.get(&parent).and_then(|window| window.draw_commands.clipping_zone)
+            self.windows
+                .get(&parent)
+                .and_then(|window| window.draw_commands.clipping_zone)
         } else {
             None
         };
@@ -457,6 +456,7 @@ impl Ui {
     }
 
     pub fn new_frame(&mut self) {
+        self.drag_hovered = None;
         self.frame += 1;
 
         for (_, window) in &mut self.windows {

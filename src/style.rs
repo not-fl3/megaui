@@ -39,6 +39,9 @@ pub struct Style {
     pub group_border_focused_highlight: Color,
     pub group_border_inactive_hovered: Color,
     pub group_border_inactive: Color,
+
+    pub editbox_cursor_focused: Color,
+    pub editbox_cursor_inactive: Color,
 }
 
 impl Default for Style {
@@ -72,6 +75,8 @@ impl Default for Style {
             group_border_focused_highlight: Color::from_rgba(34, 34, 255, 255),
             group_border_inactive_hovered: Color::from_rgba(17, 136, 17, 34),
             group_border_inactive: Color::from_rgba(17, 17, 17, 34),
+            editbox_cursor_focused: Color::from_rgba(0, 0, 0, 235),
+            editbox_cursor_inactive: Color::from_rgba(50, 50, 50, 34),
         }
     }
 }
@@ -186,6 +191,14 @@ impl Style {
             }
         } else {
             self.button_background_inactive
+        }
+    }
+
+    pub fn editbox_cursor(&self, focused: bool) -> Color {
+        if focused {
+            self.editbox_cursor_focused
+        } else {
+            self.editbox_cursor_inactive
         }
     }
 }

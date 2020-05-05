@@ -11,6 +11,8 @@ pub struct Editbox {
     line_height: f32,
 }
 
+const LEFT_MARGIN: f32 = 2.;
+
 fn current_cursor_x_postion(text: &str, mut cursor: u32) -> u32 {
     let mut line_position = 0;
     while cursor > 0 && text.chars().nth(cursor as usize - 1).unwrap_or('x') != '\n' {
@@ -157,29 +159,41 @@ impl Editbox {
 
         let cursor = *context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
 
-        let mut x = 9.;
+        let mut x = LEFT_MARGIN;
         let mut y = 0.;
 
         for n in 0..text.len() + 1 {
             let character = text.chars().nth(n).unwrap_or(' ');
             if n == cursor as usize {
                 context.window.draw_commands.draw_rect(
-                    Rect::new(pos.x + x, pos.y + y, 2., 13.),
-                    Color::new(0., 0., 0., 1.),
+                    Rect::new(pos.x + x, pos.y + y - 2., 2., 13.),
+                    context.global_style.editbox_cursor(context.focused),
                     None,
                 );
             }
+            let mut advance = 0.;
             if character != '\n' {
-                context.window.draw_commands.draw_label(
-                    &character.to_string(),
-                    pos + Vector2::new(x, y),
-                    color,
-                );
+                advance = context
+                    .window
+                    .draw_commands
+                    .draw_character(character, pos + Vector2::new(x, y), color)
+                    .unwrap_or(0.);
             }
-            x += 9.;
+
+            if context.input.is_mouse_down
+                && (context.input.mouse_position.x - (pos.x + x)).abs() < advance / 2.
+                && (context.input.mouse_position.y - (pos.y + y + self.line_height / 2.)).abs()
+                    < self.line_height / 2.
+            {
+                let cursor = context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
+
+                *cursor = n as u32;
+            }
+
+            x += advance;
             if character == '\n' {
                 y += self.line_height;
-                x = 9.;
+                x = LEFT_MARGIN;
             }
         }
 

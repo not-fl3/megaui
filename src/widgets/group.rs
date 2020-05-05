@@ -97,7 +97,6 @@ impl Group {
             }
         }
 
-
         let clip_rect = context.window.content_rect();
         context.window.draw_commands.clip(clip_rect);
         context.window.draw_commands.draw_rect(

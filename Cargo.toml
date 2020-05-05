@@ -12,3 +12,5 @@ Simple, zero-depdenencies, immediate mode UI library
 
 [dependencies]
 miniquad_text_rusttype = { version = "0.1", default-features = true }
+#miniquad_text_rusttype = { path = "../miniquad_text_rusttype", version = "0.1", default-features = true }
+
