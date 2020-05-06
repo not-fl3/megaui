@@ -1,6 +1,6 @@
 use crate::{
     hash,
-    types::{Color, Rect, Vector2},
+    types::{Rect, Vector2},
     ui::InputCharacter,
     Id, Layout, Ui,
 };
@@ -180,14 +180,27 @@ impl Editbox {
                     .unwrap_or(0.);
             }
 
-            if context.input.is_mouse_down
-                && (context.input.mouse_position.x - (pos.x + x)).abs() < advance / 2.
-                && (context.input.mouse_position.y - (pos.y + y + self.line_height / 2.)).abs()
-                    < self.line_height / 2.
-            {
-                let cursor = context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
+            if context.input.is_mouse_down {
+                let cursor_on_current_line =
+                    (context.input.mouse_position.y - (pos.y + y + self.line_height / 2.)).abs()
+                        < self.line_height / 2.;
+                let line_end = character == '\n';
+                let cursor_after_line_end = context.input.mouse_position.x > (pos.x + x);
+                let clickable_character = character != '\n';
+                let cursor_on_character =
+                    (context.input.mouse_position.x - (pos.x + x)).abs() < advance / 2.;
+                let last_character = n == text.len();
+                let cursor_below_line =
+                    (context.input.mouse_position.y - (pos.y + y + self.line_height)) > 0.;
 
-                *cursor = n as u32;
+                if (cursor_on_current_line && line_end && cursor_after_line_end)
+                    || (cursor_on_current_line && clickable_character && cursor_on_character)
+                    || (last_character && cursor_below_line)
+                {
+                    let cursor = context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
+
+                    *cursor = n as u32;
+                }
             }
 
             x += advance;
