@@ -1,9 +1,5 @@
-#![allow(warnings)]
-
 use crate::{
-    hash,
-    types::{Color, Rect, Vector2},
-    ui::InputCharacter,
+    types::{Color, Vector2},
     widgets::Editbox,
     Id, Layout, Ui,
 };

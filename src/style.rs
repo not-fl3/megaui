@@ -46,6 +46,10 @@ pub struct Style {
 
     pub separator_focused: Color,
     pub separator_inactive: Color,
+
+    pub slider_bar_focused: Color,
+    pub slider_bar_hovered: Color,
+    pub slider_bar_inactive: Color,
 }
 
 impl Default for Style {
@@ -86,6 +90,10 @@ impl Default for Style {
 
             separator_focused: Color::from_rgba(180, 180, 180, 235),
             separator_inactive: Color::from_rgba(180, 180, 180, 134),
+
+            slider_bar_focused: Color::from_rgba(100, 100, 100, 255),
+            slider_bar_hovered: Color::from_rgba(220, 220, 220, 255),
+            slider_bar_inactive: Color::from_rgba(100, 100, 100, 34),
         }
     }
 }
@@ -218,6 +226,16 @@ impl Style {
             self.separator_focused
         } else {
             self.separator_inactive
+        }
+    }
+
+    pub fn slider_bar(&self, focused: bool, hovered: bool) -> Color {
+        if focused && hovered {
+            self.slider_bar_hovered
+        } else if focused {
+            self.slider_bar_focused
+        } else {
+            self.slider_bar_inactive
         }
     }
 }

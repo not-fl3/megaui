@@ -58,6 +58,11 @@ impl Editbox {
 
         let cursor = context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
 
+        // in case the string was updated outside of editbox
+        if *cursor > text.len() as u32 {
+            *cursor = text.len() as u32;
+        }
+
         let input_focused = context.window.input_focused(self.id);
         if context.focused && input_focused {
             for character in context.input.input_buffer.drain(0..) {
