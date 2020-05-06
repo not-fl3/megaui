@@ -204,11 +204,13 @@ impl<'a> WindowContext<'a> {
         if bar.contains(self.input.mouse_position) {
             hovered = true;
         }
-        if hovered && self.input.click_down {
+        if hovered && self.input.clicked() {
+            self.input.cursor_grabbed = true;
             scroll.dragging_y = true;
             scroll.initial_scroll.y = scroll.rect.y - self.input.mouse_position.y * k;
         }
-        if self.input.is_mouse_down == false {
+        if scroll.dragging_y && self.input.is_mouse_down == false {
+            self.input.cursor_grabbed = false;
             scroll.dragging_y = false;
         }
         if scroll.dragging_y {

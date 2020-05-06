@@ -76,11 +76,13 @@ impl<'a> Slider<'a> {
         let bar_rect = Rect::new(data_pos - 4., pos.y, 8., 20.);
         let hovered = bar_rect.contains(context.input.mouse_position);
 
-        if hovered && context.input.is_mouse_down {
+        if hovered && context.input.clicked() {
             *dragging = 1;
+            context.input.cursor_grabbed = true;
         }
 
         if *dragging == 1 && context.input.is_mouse_down == false {
+            context.input.cursor_grabbed = false;
             *dragging = 0;
         }
 

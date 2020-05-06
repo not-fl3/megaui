@@ -32,7 +32,10 @@ impl<'a> TreeNode<'a> {
         let rect = Rect::new(pos.x, pos.y, size.x as f32, size.y as f32);
         let hovered = rect.contains(context.input.mouse_position);
 
-        let clicked = context.focused && hovered && context.input.click_up;
+        let clicked = context.focused
+            && hovered
+            && context.input.click_down
+            && context.input.cursor_grabbed == false;
 
         let opened = context.storage.entry(self.id).or_insert(0);
 

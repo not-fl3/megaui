@@ -14,9 +14,14 @@ pub struct Input {
     pub click_up: bool,
     pub mouse_wheel: Vector2,
     pub input_buffer: Vec<InputCharacter>,
+    pub cursor_grabbed: bool,
 }
 
 impl Input {
+    pub fn clicked(&self) -> bool {
+        self.is_mouse_down && self.cursor_grabbed == false
+    }
+
     pub fn reset(&mut self) {
         self.click_down = false;
         self.click_up = false;

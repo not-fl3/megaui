@@ -156,7 +156,7 @@ impl Editbox {
 
         let rect = Rect::new(pos.x, pos.y, self.size.x, self.size.y);
 
-        if context.input.is_mouse_down && rect.contains(context.input.mouse_position) {
+        if context.input.clicked() && rect.contains(context.input.mouse_position) {
             context.window.input_focus = Some(self.id);
         }
 
@@ -215,7 +215,7 @@ impl Editbox {
                     .unwrap_or(0.);
             }
 
-            if context.input.is_mouse_down {
+            if context.input.clicked() {
                 let cursor_on_current_line =
                     (context.input.mouse_position.y - (pos.y + y + self.line_height / 2.)).abs()
                         < self.line_height / 2.;
