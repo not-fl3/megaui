@@ -68,9 +68,9 @@ impl Window {
         }
 
         let clip_rect = context.window.content_rect();
-        context.window.draw_commands.clip(clip_rect);
         context.scroll_area();
 
+        context.window.draw_commands.clip(clip_rect);
         f(ui);
 
         let context = ui.get_active_window_context();

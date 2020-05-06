@@ -23,6 +23,7 @@ pub(crate) struct Window {
     pub title_height: f32,
     pub position: Vector2,
     pub size: Vector2,
+    pub vertical_scroll_bar_width: f32,
     pub movable: bool,
     pub draw_commands: CommandsList,
     pub cursor: Cursor,
@@ -45,6 +46,7 @@ impl Window {
             id,
             position,
             size,
+            vertical_scroll_bar_width: 0.,
             title_height,
             parent,
             visible: true,
@@ -84,7 +86,7 @@ impl Window {
         Rect::new(
             self.position.x,
             self.position.y + self.title_height,
-            self.size.x,
+            self.size.x - self.vertical_scroll_bar_width,
             self.size.y - self.title_height,
         )
     }
@@ -151,6 +153,10 @@ impl<'a> WindowContext<'a> {
     pub(crate) fn scroll_area(&mut self) {
         let inner_rect = self.window.cursor.scroll.inner_rect_previous_frame;
         let rect = self.window.content_rect();
+        let rect = Rect {
+            w: rect.w + self.window.vertical_scroll_bar_width,
+            ..rect
+        };
 
         self.window.cursor.scroll.scroll = Vector2::new(
             -self.window.cursor.scroll.rect.x,
@@ -158,6 +164,7 @@ impl<'a> WindowContext<'a> {
         );
 
         if inner_rect.h > rect.h {
+            self.window.vertical_scroll_bar_width = self.global_style.scroll_width;
             self.draw_vertical_scroll_bar(
                 rect,
                 Rect::new(
@@ -167,6 +174,8 @@ impl<'a> WindowContext<'a> {
                     rect.h,
                 ),
             );
+        } else {
+            self.window.vertical_scroll_bar_width = 0.;
         }
 
         self.window.cursor.scroll.update();
