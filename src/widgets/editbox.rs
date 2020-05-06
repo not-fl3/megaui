@@ -8,6 +8,7 @@ use crate::{
 pub struct Editbox {
     id: Id,
     size: Vector2,
+    multiline: bool,
     pos: Option<Vector2>,
     line_height: f32,
 }
@@ -28,9 +29,14 @@ impl Editbox {
         Editbox {
             id,
             size,
+            multiline: true,
             pos: None,
             line_height: 14.0,
         }
+    }
+
+    pub fn multiline(self, multiline: bool) -> Editbox {
+        Editbox { multiline, ..self }
     }
 
     pub fn position(self, pos: Vector2) -> Editbox {
@@ -228,7 +234,7 @@ impl Editbox {
             }
 
             x += advance;
-            if character == '\n' {
+            if character == '\n' && self.multiline {
                 y += self.line_height;
                 x = LEFT_MARGIN;
             }

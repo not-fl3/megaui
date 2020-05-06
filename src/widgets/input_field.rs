@@ -36,6 +36,7 @@ impl<'a> InputField<'a> {
 
         Editbox::new(self.id, Vector2::new(size.x / 2., size.y))
             .position(pos)
+            .multiline(false)
             .ui(ui, data);
 
         let context = ui.get_active_window_context();
