@@ -41,7 +41,11 @@ pub struct Style {
     pub group_border_inactive: Color,
 
     pub editbox_cursor_focused: Color,
+    pub editbox_cursor_focused_inactive: Color,
     pub editbox_cursor_inactive: Color,
+
+    pub separator_focused: Color,
+    pub separator_inactive: Color,
 }
 
 impl Default for Style {
@@ -75,8 +79,13 @@ impl Default for Style {
             group_border_focused_highlight: Color::from_rgba(34, 34, 255, 255),
             group_border_inactive_hovered: Color::from_rgba(17, 136, 17, 34),
             group_border_inactive: Color::from_rgba(17, 17, 17, 34),
+
             editbox_cursor_focused: Color::from_rgba(0, 0, 0, 235),
+            editbox_cursor_focused_inactive: Color::from_rgba(220, 220, 220, 235),
             editbox_cursor_inactive: Color::from_rgba(50, 50, 50, 34),
+
+            separator_focused: Color::from_rgba(180, 180, 180, 235),
+            separator_inactive: Color::from_rgba(180, 180, 180, 134),
         }
     }
 }
@@ -194,11 +203,21 @@ impl Style {
         }
     }
 
-    pub fn editbox_cursor(&self, focused: bool) -> Color {
-        if focused {
+    pub fn editbox_cursor(&self, focused: bool, input_focus: bool) -> Color {
+        if focused && input_focus {
             self.editbox_cursor_focused
+        } else if input_focus {
+            self.editbox_cursor_focused_inactive
         } else {
             self.editbox_cursor_inactive
+        }
+    }
+
+    pub fn separator(&self, focused: bool) -> Color {
+        if focused {
+            self.separator_focused
+        } else {
+            self.separator_inactive
         }
     }
 }

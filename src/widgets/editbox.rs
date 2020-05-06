@@ -8,6 +8,7 @@ use crate::{
 pub struct Editbox {
     id: Id,
     size: Vector2,
+    pos: Option<Vector2>,
     line_height: f32,
 }
 
@@ -27,7 +28,15 @@ impl Editbox {
         Editbox {
             id,
             size,
+            pos: None,
             line_height: 14.0,
+        }
+    }
+
+    pub fn position(self, pos: Vector2) -> Editbox {
+        Editbox {
+            pos: Some(pos),
+            ..self
         }
     }
 
@@ -43,7 +52,8 @@ impl Editbox {
 
         let cursor = context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
 
-        if context.focused {
+        let input_focused = context.window.input_focused(self.id);
+        if context.focused && input_focused {
             for character in context.input.input_buffer.drain(0..) {
                 use crate::input_handler::KeyCode;
 
@@ -129,13 +139,25 @@ impl Editbox {
         }
 
         let color = context.global_style.text(context.focused);
-        let pos = context.window.cursor.fit(self.size, Layout::Vertical);
+        let pos = self
+            .pos
+            .unwrap_or_else(|| context.window.cursor.fit(self.size, Layout::Vertical));
+
+        let rect = Rect::new(pos.x, pos.y, self.size.x, self.size.y);
+
+        if context.input.is_mouse_down && rect.contains(context.input.mouse_position) {
+            context.window.input_focus = Some(self.id);
+        }
+
+        // draw rect in parent window
 
         context.window.draw_commands.draw_rect(
-            Rect::new(pos.x, pos.y, self.size.x, self.size.y),
+            rect,
             context.global_style.editbox_background(context.focused),
             None,
         );
+
+        // start child window for nice scroll inside the rect
 
         let parent = ui.get_active_window_context();
         parent.window.childs.push(self.id);
@@ -167,7 +189,9 @@ impl Editbox {
             if n == cursor as usize {
                 context.window.draw_commands.draw_rect(
                     Rect::new(pos.x + x, pos.y + y - 2., 2., 13.),
-                    context.global_style.editbox_cursor(context.focused),
+                    context
+                        .global_style
+                        .editbox_cursor(context.focused, input_focused),
                     None,
                 );
             }

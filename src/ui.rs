@@ -28,6 +28,7 @@ pub(crate) struct Window {
     pub cursor: Cursor,
     pub childs: Vec<Id>,
     pub want_close: bool,
+    pub input_focus: Option<Id>,
 }
 impl Window {
     pub fn new(
@@ -62,7 +63,13 @@ impl Window {
             childs: vec![],
             want_close: false,
             movable,
+            input_focus: None,
         }
+    }
+
+    pub fn input_focused(&self, id: Id) -> bool {
+        self.input_focus
+            .map_or(false, |input_focus| input_focus == id)
     }
 
     pub fn top_level(&self) -> bool {
