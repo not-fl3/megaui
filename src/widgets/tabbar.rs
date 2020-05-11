@@ -30,7 +30,7 @@ impl Tabbar {
             .fit(self.size, Layout::Free(self.position));
 
         let width = self.size.x as f32 / self.tabs.len() as f32;
-        let selected = *context.storage.entry(self.id).or_insert(0);
+        let selected = *context.storage_u32.entry(self.id).or_insert(0);
 
         for (n, label) in self.tabs.iter().enumerate() {
             let rect = Rect::new(
@@ -43,7 +43,7 @@ impl Tabbar {
             let selected = n as u32 == selected;
 
             if context.focused && hovered && context.input.click_up {
-                *context.storage.entry(self.id).or_insert(0) = n as u32;
+                *context.storage_u32.entry(self.id).or_insert(0) = n as u32;
             }
             context.window.draw_commands.draw_rect(
                 rect,
@@ -72,7 +72,7 @@ impl Tabbar {
                 ),
             );
         }
-        context.storage[&self.id]
+        context.storage_u32[&self.id]
     }
 }
 

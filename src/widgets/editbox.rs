@@ -1,6 +1,6 @@
 use crate::{
     hash,
-    types::{Rect, Vector2},
+    types::{Rect, Vector2, Color},
     ui::InputCharacter,
     Id, Layout, Ui,
 };
@@ -13,16 +13,86 @@ pub struct Editbox {
     line_height: f32,
 }
 
-const LEFT_MARGIN: f32 = 2.;
+#[derive(Default)]
+struct EditboxState {
+    cursor: u32,
 
-fn current_cursor_x_postion(text: &str, mut cursor: u32) -> u32 {
-    let mut line_position = 0;
-    while cursor > 0 && text.chars().nth(cursor as usize - 1).unwrap_or('x') != '\n' {
-        cursor -= 1;
-        line_position += 1;
-    }
-    line_position
+    selection: Option<(u32, u32)>,
 }
+
+impl EditboxState {
+    fn in_selected_range(&self, cursor: u32) -> bool {
+        match self.selection {
+            Some((start, end)) if start < end => cursor >= start && cursor < end,
+            Some((end, start)) => cursor >= start && cursor < end,
+            _ => false,
+        }
+    }
+    fn find_line_begin(&self, text: &str) -> u32 {
+        let mut line_position = 0;
+        let mut cursor_tmp = self.cursor;
+
+        while cursor_tmp > 0 && text.chars().nth(cursor_tmp as usize - 1).unwrap_or('x') != '\n' {
+            cursor_tmp -= 1;
+            line_position += 1;
+        }
+        line_position
+    }
+
+    fn find_line_end(&self, text: &str) -> u32 {
+        let mut cursor_tmp = self.cursor;
+        while cursor_tmp < text.len() as u32
+            && text.chars().nth(cursor_tmp as usize).unwrap_or('x') != '\n'
+        {
+            cursor_tmp += 1;
+        }
+
+        cursor_tmp - self.cursor
+    }
+
+    fn insert_character(&mut self, text: &mut String, character: char) {
+        self.selection = None;
+        text.insert(self.cursor as usize, character);
+        self.cursor += 1;
+    }
+
+    fn move_cursor(&mut self, text: &String, dx: i32, shift: bool) {
+        let start_cursor = self.cursor;
+        let mut end_cursor = start_cursor;
+
+        if self.cursor as i32 + dx <= text.len() as i32 && self.cursor as i32 + dx >= 0 {
+            end_cursor = (self.cursor as i32 + dx) as u32;
+            self.cursor = end_cursor;
+        }
+
+        if shift == false {
+            self.selection = None;
+        }
+        if shift {
+            match &mut self.selection {
+                None => self.selection = Some((start_cursor, end_cursor)),
+                Some((_, ref mut end)) => {
+                    *end = end_cursor;
+                }
+            }
+        }
+    }
+
+    fn move_cursor_within_line(&mut self, text: &String, dx: i32, shift: bool) {
+        assert!(dx >= 0, "not implemented");
+
+        for _ in 0..dx {
+            if text.chars().nth(self.cursor as usize).unwrap_or('x') == '\n'
+                || self.cursor == text.len() as u32
+            {
+                break;
+            }
+            self.move_cursor(text, 1, shift);
+        }
+    }
+}
+
+const LEFT_MARGIN: f32 = 2.;
 
 impl Editbox {
     pub fn new(id: Id, size: Vector2) -> Editbox {
@@ -53,100 +123,116 @@ impl Editbox {
         }
     }
 
+    fn apply_keyboard_input(
+        input_buffer: &mut Vec<InputCharacter>,
+        text: &mut String,
+        state: &mut EditboxState,
+    ) {
+        for character in input_buffer.drain(0..) {
+            use crate::input_handler::KeyCode;
+
+            match character {
+                InputCharacter::Char(character) => {
+                    if character != 13 as char && character != 10 as char && character.is_ascii() {
+                        state.insert_character(text, character);
+                    }
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::Enter,
+                    ..
+                } => {
+                    state.insert_character(text, '\n');
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::Backspace,
+                    ..
+                } => {
+                    state.selection = None;
+                    if state.cursor > 0 {
+                        text.remove(state.cursor as usize - 1);
+                        state.cursor -= 1;
+                    }
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::Delete,
+                    ..
+                } => {
+                    state.selection = None;
+                    if state.cursor < text.len() as u32 && text.len() != 0 {
+                        text.remove(state.cursor as usize);
+                    }
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::Right,
+                    modifier_shift,
+                } => {
+                    state.move_cursor(text, 1, modifier_shift);
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::Left,
+                    modifier_shift,
+                } => {
+                    state.move_cursor(text, -1, modifier_shift);
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::Home,
+                    modifier_shift,
+                } => {
+                    let to_line_begin = state.find_line_begin(&text) as i32;
+                    state.move_cursor(text, -to_line_begin, modifier_shift);
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::End,
+                    modifier_shift,
+                } => {
+                    let to_line_end = state.find_line_end(&text) as i32;
+                    state.move_cursor(text, to_line_end, modifier_shift);
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::Up,
+                    modifier_shift,
+                } => {
+                    let to_line_begin = state.find_line_begin(&text) as i32;
+                    state.move_cursor(text, -to_line_begin, modifier_shift);
+                    if state.cursor != 0 {
+                        state.move_cursor(text, -1, modifier_shift);
+                        let new_to_line_begin = state.find_line_begin(&text) as i32;
+                        let offset = to_line_begin.min(new_to_line_begin) - new_to_line_begin;
+                        state.move_cursor(text, offset, modifier_shift);
+                    }
+                }
+                InputCharacter::ControlCode {
+                    key_code: KeyCode::Down,
+                    modifier_shift,
+                } => {
+                    let to_line_begin = state.find_line_begin(&text) as i32;
+                    let to_line_end = state.find_line_end(&text) as i32;
+
+                    state.move_cursor(text, to_line_end, modifier_shift);
+                    if text.len() != 0 && state.cursor < text.len() as u32 - 1 {
+                        state.move_cursor(text, 1, modifier_shift);
+                        state.move_cursor_within_line(text, to_line_begin, modifier_shift);
+                    }
+                }
+            }
+        }
+    }
+
     pub fn ui(self, ui: &mut Ui, text: &mut String) {
         let context = ui.get_active_window_context();
 
-        let cursor = context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
+        let mut state = context
+            .storage_any
+            .get::<EditboxState>(hash!(self.id, "cursor"));
 
         // in case the string was updated outside of editbox
-        if *cursor > text.len() as u32 {
-            *cursor = text.len() as u32;
+        if state.cursor > text.len() as u32 {
+            state.cursor = text.len() as u32;
         }
 
         let input_focused = context.window.input_focused(self.id);
         if context.focused && input_focused {
-            for character in context.input.input_buffer.drain(0..) {
-                use crate::input_handler::KeyCode;
-
-                match character {
-                    InputCharacter::Char(character) => {
-                        if character != 13 as char
-                            && character != 10 as char
-                            && character.is_ascii()
-                        {
-                            text.insert(*cursor as usize, character);
-                            *cursor += 1;
-                        }
-                    }
-                    InputCharacter::ControlCode(code) => match code {
-                        KeyCode::Enter => {
-                            text.insert(*cursor as usize, '\n');
-                            *cursor += 1;
-                        }
-                        KeyCode::Backspace => {
-                            if *cursor > 0 {
-                                text.remove(*cursor as usize - 1);
-                                *cursor -= 1;
-                            }
-                        }
-                        KeyCode::Delete => {
-                            if *cursor < text.len() as u32 && text.len() != 0 {
-                                text.remove(*cursor as usize);
-                            }
-                        }
-                        KeyCode::Right => {
-                            if *cursor < text.len() as u32 {
-                                *cursor += 1;
-                            }
-                        }
-                        KeyCode::Left => {
-                            if *cursor > 0 {
-                                *cursor -= 1;
-                            }
-                        }
-                        KeyCode::Home => {
-                            let line_position = current_cursor_x_postion(&text, *cursor);
-                            *cursor -= line_position;
-                        }
-                        KeyCode::End => {
-                            while *cursor < text.len() as u32
-                                && text.chars().nth(*cursor as usize).unwrap_or('x') != '\n'
-                            {
-                                *cursor += 1;
-                            }
-                        }
-                        KeyCode::Up => {
-                            let line_position = current_cursor_x_postion(&text, *cursor);
-                            *cursor -= line_position;
-                            if *cursor != 0 {
-                                *cursor -= 1;
-                                let new_line_position = current_cursor_x_postion(&text, *cursor);
-                                *cursor -= new_line_position;
-                                *cursor += line_position.min(new_line_position);
-                            }
-                        }
-                        KeyCode::Down => {
-                            let line_position = current_cursor_x_postion(&text, *cursor);
-                            while *cursor < text.len() as u32
-                                && text.chars().nth(*cursor as usize).unwrap_or('x') != '\n'
-                            {
-                                *cursor += 1;
-                            }
-                            if text.len() != 0 && *cursor < text.len() as u32 - 1 {
-                                *cursor += 1;
-                                for _ in 0..line_position {
-                                    if text.chars().nth(*cursor as usize).unwrap_or('x') == '\n'
-                                        || *cursor == text.len() as u32 - 1
-                                    {
-                                        break;
-                                    }
-                                    *cursor += 1;
-                                }
-                            }
-                        }
-                    },
-                }
-            }
+            Self::apply_keyboard_input(&mut context.input.input_buffer, text, &mut state);
         }
 
         let color = context.global_style.text(context.focused);
@@ -190,14 +276,16 @@ impl Editbox {
 
         context.scroll_area();
 
-        let cursor = *context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
+        let state = context
+            .storage_any
+            .get::<EditboxState>(hash!(self.id, "cursor"));
 
         let mut x = LEFT_MARGIN;
         let mut y = 0.;
 
         for n in 0..text.len() + 1 {
             let character = text.chars().nth(n).unwrap_or(' ');
-            if n == cursor as usize {
+            if n == state.cursor as usize {
                 context.window.draw_commands.draw_rect(
                     Rect::new(pos.x + x, pos.y + y - 2., 2., 13.),
                     context
@@ -213,6 +301,14 @@ impl Editbox {
                     .draw_commands
                     .draw_character(character, pos + Vector2::new(x, y), color)
                     .unwrap_or(0.);
+                if state.in_selected_range(n as u32) {
+		    let pos = pos + Vector2::new(x, y);
+		    let color = Color::new(0.1, 0.1, 0.1, 0.5);
+                    context
+                        .window
+                        .draw_commands
+                        .draw_rect(Rect::new(pos.x, pos.y, advance, 13.), None, color);
+                }
             }
 
             if context.input.clicked() {
@@ -232,9 +328,7 @@ impl Editbox {
                     || (cursor_on_current_line && clickable_character && cursor_on_character)
                     || (last_character && cursor_below_line)
                 {
-                    let cursor = context.storage.entry(hash!(self.id, "cursor")).or_insert(0);
-
-                    *cursor = n as u32;
+                    state.cursor = n as u32;
                 }
             }
 

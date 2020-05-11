@@ -17,5 +17,5 @@ pub trait InputHandler {
     fn mouse_wheel(&mut self, x: f32, y: f32);
     fn mouse_move(&mut self, position: (f32, f32));
     fn char_event(&mut self, character: char);
-    fn key_down(&mut self, key_down: KeyCode);
+    fn key_down(&mut self, key_down: KeyCode, shift: bool);
 }

@@ -64,7 +64,7 @@ impl<'a> Slider<'a> {
 
         let context = ui.get_active_window_context();
         let dragging = context
-            .storage
+            .storage_u32
             .entry(hash!(self.id, "dragging"))
             .or_insert(0);
 

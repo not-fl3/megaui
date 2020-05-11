@@ -3,7 +3,10 @@ use crate::types::Vector2;
 #[derive(Clone, Debug)]
 pub enum InputCharacter {
     Char(char),
-    ControlCode(crate::input_handler::KeyCode),
+    ControlCode {
+	key_code: crate::input_handler::KeyCode,
+	modifier_shift: bool
+    }
 }
 
 #[derive(Default, Clone)]

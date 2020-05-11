@@ -129,7 +129,8 @@ pub struct Ui {
     windows: HashMap<Id, Window>,
     windows_focus_order: Vec<Id>,
 
-    storage: HashMap<Id, u32>,
+    storage_u32: HashMap<Id, u32>,
+    storage_any: AnyStorage,
 
     dragging: Option<(Id, DragState)>,
     drag_hovered: Option<Id>,
@@ -139,11 +140,26 @@ pub struct Ui {
     pub font_atlas: Rc<FontAtlas>,
 }
 
+#[derive(Default)]
+pub(crate) struct AnyStorage {
+    storage: HashMap<Id, Box<dyn std::any::Any>>,
+}
+
+impl AnyStorage {
+    pub(crate) fn get<T: Default + 'static>(&mut self, id: Id) -> &mut T {
+        self.storage
+            .entry(id)
+            .or_insert_with(|| Box::new(T::default()))
+            .downcast_mut::<T>()
+            .unwrap()
+    }
+}
 pub(crate) struct WindowContext<'a> {
     pub window: &'a mut Window,
     pub dragging: &'a mut Option<(Id, DragState)>,
     pub drag_hovered: &'a mut Option<Id>,
-    pub storage: &'a mut HashMap<Id, u32>,
+    pub storage_u32: &'a mut HashMap<Id, u32>,
+    pub storage_any: &'a mut AnyStorage,
     pub global_style: &'a Style,
     pub input: &'a mut Input,
     pub focused: bool,
@@ -294,10 +310,13 @@ impl InputHandler for Ui {
             .push(input::InputCharacter::Char(character));
     }
 
-    fn key_down(&mut self, key: crate::input_handler::KeyCode) {
+    fn key_down(&mut self, key: crate::input_handler::KeyCode, shift: bool) {
         self.input
             .input_buffer
-            .push(input::InputCharacter::ControlCode(key));
+            .push(input::InputCharacter::ControlCode {
+                key_code: key,
+                modifier_shift: shift,
+            });
     }
 }
 
@@ -330,7 +349,8 @@ impl Ui {
             active_window: None,
             child_window_stack: vec![],
             drag_hovered: None,
-            storage: HashMap::default(),
+            storage_u32: HashMap::default(),
+            storage_any: AnyStorage::default(),
             font_atlas: Rc::new(font_atlas),
         }
     }
@@ -405,7 +425,8 @@ impl Ui {
             global_style: &self.style,
             dragging: &mut self.dragging,
             drag_hovered: &mut self.drag_hovered,
-            storage: &mut self.storage,
+            storage_u32: &mut self.storage_u32,
+            storage_any: &mut self.storage_any,
         }
     }
 
@@ -427,7 +448,8 @@ impl Ui {
             global_style: &self.style,
             dragging: &mut self.dragging,
             drag_hovered: &mut self.drag_hovered,
-            storage: &mut self.storage,
+            storage_u32: &mut self.storage_u32,
+            storage_any: &mut self.storage_any,
         }
     }
 
