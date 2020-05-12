@@ -46,23 +46,39 @@ impl<'a> Slider<'a> {
         let slider_width = size.x - editbox_width - label_width;
         let margin = 5.;
 
-        let mut string = format!("{:1}", *data);
-        Editbox::new(hash!(self.id, "editbox"), Vector2::new(50., size.y))
+        let mut temp_string = context
+            .storage_any
+            .get_or_insert_with::<String, _>(self.id, || format!("{:.2}", *data))
+            .clone();
+
+        let editbox_id = hash!(self.id, "editbox");
+        if context.window.input_focused(editbox_id) == false {
+            use std::fmt::Write;
+
+	    temp_string.clear();
+            let _ = write!(&mut temp_string, "{:.2}", *data);
+        }
+
+        Editbox::new(editbox_id, Vector2::new(50., size.y))
             .position(pos)
             .multiline(false)
-            .ui(ui, &mut string);
+            .filter(&|character| character.is_digit(10) || character == '.' || character == '-')
+            .ui(ui, &mut temp_string);
 
-        if let Ok(num) = string.parse::<f32>() {
-            if num > self.range.end {
-                *data = self.range.end;
-            } else if num < self.range.start {
-                *data = self.range.start;
-            } else {
-                *data = num;
+        let context = ui.get_active_window_context();
+        let old_string = context.storage_any.get_or_default::<String>(self.id);
+        if *old_string != temp_string {
+            if let Ok(num) = temp_string.parse::<f32>() {
+                if num > self.range.end {
+                    *data = self.range.end;
+                } else if num < self.range.start {
+                    *data = self.range.start;
+                } else {
+                    *data = num;
+                }
             }
         }
 
-        let context = ui.get_active_window_context();
         let dragging = context
             .storage_u32
             .entry(hash!(self.id, "dragging"))
@@ -78,19 +94,29 @@ impl<'a> Slider<'a> {
 
         if hovered && context.input.is_mouse_down() {
             *dragging = 1;
+	    context.window.input_focus = Some(self.id);
             context.input.cursor_grabbed = true;
         }
 
         if *dragging == 1 && context.input.is_mouse_down == false {
             context.input.cursor_grabbed = false;
             *dragging = 0;
+	    context.window.input_focus = None;
         }
 
         if *dragging == 1 {
             let mouse_position = ((context.input.mouse_position.x - slider_start_x) / slider_width)
                 .min(1.)
                 .max(0.);
+            let old_data = *data;
             *data = self.range.start + (self.range.end - self.range.start) * mouse_position;
+
+            if old_data != *data {
+                use std::fmt::Write;
+
+		temp_string.clear();
+                let _ = write!(&mut temp_string, "{:.2}", *data);
+            }
         }
 
         context.window.draw_commands.draw_line(
@@ -116,6 +142,8 @@ impl<'a> Slider<'a> {
             ),
             context.global_style.text(context.focused),
         );
+
+        *old_string = temp_string;
     }
 }
 

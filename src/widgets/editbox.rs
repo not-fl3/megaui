@@ -5,10 +5,11 @@ use crate::{
     Id, Layout, Ui,
 };
 
-pub struct Editbox {
+pub struct Editbox<'a> {
     id: Id,
     size: Vector2,
     multiline: bool,
+    filter: Option<&'a dyn Fn(char) -> bool>,
     pos: Option<Vector2>,
     line_height: f32,
 }
@@ -96,7 +97,7 @@ impl EditboxState {
     }
 
     fn insert_character(&mut self, text: &mut String, character: char) {
-	self.delete_selected(text);
+        self.delete_selected(text);
         self.selection = None;
         text.insert(self.cursor as usize, character);
         self.cursor += 1;
@@ -275,22 +276,23 @@ impl EditboxState {
 
 const LEFT_MARGIN: f32 = 2.;
 
-impl Editbox {
-    pub fn new(id: Id, size: Vector2) -> Editbox {
+impl<'a> Editbox<'a> {
+    pub fn new(id: Id, size: Vector2) -> Editbox<'a> {
         Editbox {
             id,
             size,
+            filter: None,
             multiline: true,
             pos: None,
             line_height: 14.0,
         }
     }
 
-    pub fn multiline(self, multiline: bool) -> Editbox {
+    pub fn multiline(self, multiline: bool) -> Self {
         Editbox { multiline, ..self }
     }
 
-    pub fn position(self, pos: Vector2) -> Editbox {
+    pub fn position(self, pos: Vector2) -> Self {
         Editbox {
             pos: Some(pos),
             ..self
@@ -304,7 +306,19 @@ impl Editbox {
         }
     }
 
+    pub fn filter<'b>(self, filter: &'b dyn Fn(char) -> bool) -> Editbox<'b> {
+        Editbox {
+            id: self.id,
+            line_height: self.line_height,
+            pos: self.pos,
+            multiline: self.multiline,
+            size: self.size,
+            filter: Some(filter),
+        }
+    }
+
     fn apply_keyboard_input(
+        &self,
         input_buffer: &mut Vec<InputCharacter>,
         text: &mut String,
         state: &mut EditboxState,
@@ -314,7 +328,11 @@ impl Editbox {
 
             match character {
                 InputCharacter::Char(character) => {
-                    if character != 13 as char && character != 10 as char && character.is_ascii() {
+                    if character != 13 as char
+                        && character != 10 as char
+                        && character.is_ascii()
+                        && self.filter.as_ref().map_or(true, |f| f(character))
+                    {
                         state.insert_character(text, character);
                     }
                 }
@@ -322,7 +340,9 @@ impl Editbox {
                     key_code: KeyCode::Enter,
                     ..
                 } => {
-                    state.insert_character(text, '\n');
+		    if self.multiline {
+			state.insert_character(text, '\n');
+		    }
                 }
                 InputCharacter::ControlCode {
                     key_code: KeyCode::Backspace,
@@ -405,7 +425,7 @@ impl Editbox {
 
         let mut state = context
             .storage_any
-            .get::<EditboxState>(hash!(self.id, "cursor"));
+            .get_or_default::<EditboxState>(hash!(self.id, "cursor"));
 
         // in case the string was updated outside of editbox
         if state.cursor > text.len() as u32 {
@@ -414,14 +434,14 @@ impl Editbox {
 
         let input_focused = context.window.input_focused(self.id);
 
-	// reset selection state when lost focus
-	if context.focused == false || input_focused == false {
-	    state.deselect();
-	    state.clicks_counter = 0;
-	}
+        // reset selection state when lost focus
+        if context.focused == false || input_focused == false {
+            state.deselect();
+            state.clicks_counter = 0;
+        }
 
         if context.focused && input_focused {
-            Self::apply_keyboard_input(&mut context.input.input_buffer, text, &mut state);
+            self.apply_keyboard_input(&mut context.input.input_buffer, text, &mut state);
         }
 
         let color = context.global_style.text(context.focused);
@@ -467,7 +487,7 @@ impl Editbox {
 
         let state = context
             .storage_any
-            .get::<EditboxState>(hash!(self.id, "cursor"));
+            .get_or_default::<EditboxState>(hash!(self.id, "cursor"));
 
         let mut x = LEFT_MARGIN;
         let mut y = 0.;

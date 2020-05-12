@@ -146,7 +146,19 @@ pub(crate) struct AnyStorage {
 }
 
 impl AnyStorage {
-    pub(crate) fn get<T: Default + 'static>(&mut self, id: Id) -> &mut T {
+    pub(crate) fn get_or_insert_with<T: Default + 'static, F: Fn() -> T>(
+        &mut self,
+        id: Id,
+        f: F,
+    ) -> &mut T {
+        self.storage
+            .entry(id)
+            .or_insert_with(|| Box::new(f()))
+            .downcast_mut::<T>()
+            .unwrap()
+    }
+
+    pub(crate) fn get_or_default<T: Default + 'static>(&mut self, id: Id) -> &mut T {
         self.storage
             .entry(id)
             .or_insert_with(|| Box::new(T::default()))
