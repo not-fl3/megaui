@@ -47,7 +47,7 @@ impl<'a> Slider<'a> {
         let margin = 5.;
 
         let mut string = format!("{:1}", *data);
-        Editbox::new(self.id, Vector2::new(50., size.y))
+        Editbox::new(hash!(self.id, "editbox"), Vector2::new(50., size.y))
             .position(pos)
             .multiline(false)
             .ui(ui, &mut string);
@@ -76,7 +76,7 @@ impl<'a> Slider<'a> {
         let bar_rect = Rect::new(data_pos - 4., pos.y, 8., 20.);
         let hovered = bar_rect.contains(context.input.mouse_position);
 
-        if hovered && context.input.clicked() {
+        if hovered && context.input.is_mouse_down() {
             *dragging = 1;
             context.input.cursor_grabbed = true;
         }

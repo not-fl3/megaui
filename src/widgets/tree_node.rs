@@ -34,8 +34,7 @@ impl<'a> TreeNode<'a> {
 
         let clicked = context.focused
             && hovered
-            && context.input.click_down
-            && context.input.cursor_grabbed == false;
+            && context.input.click_down();
 
         let opened = context.storage_u32.entry(self.id).or_insert(0);
 

@@ -4,9 +4,9 @@ use crate::types::Vector2;
 pub enum InputCharacter {
     Char(char),
     ControlCode {
-	key_code: crate::input_handler::KeyCode,
-	modifier_shift: bool
-    }
+        key_code: crate::input_handler::KeyCode,
+        modifier_shift: bool,
+    },
 }
 
 #[derive(Default, Clone)]
@@ -21,8 +21,16 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn clicked(&self) -> bool {
+    pub fn is_mouse_down(&self) -> bool {
         self.is_mouse_down && self.cursor_grabbed == false
+    }
+
+    pub fn click_down(&self) -> bool {
+        self.click_down && self.cursor_grabbed == false
+    }
+
+    pub fn click_up(&self) -> bool {
+        self.click_up && self.cursor_grabbed == false
     }
 
     pub fn reset(&mut self) {

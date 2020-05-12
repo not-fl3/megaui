@@ -50,6 +50,9 @@ pub struct Style {
     pub slider_bar_focused: Color,
     pub slider_bar_hovered: Color,
     pub slider_bar_inactive: Color,
+
+    pub selection_background_focused: Color,
+    pub selection_background_inactive: Color,
 }
 
 impl Default for Style {
@@ -94,6 +97,9 @@ impl Default for Style {
             slider_bar_focused: Color::from_rgba(100, 100, 100, 255),
             slider_bar_hovered: Color::from_rgba(220, 220, 220, 255),
             slider_bar_inactive: Color::from_rgba(100, 100, 100, 34),
+
+	    selection_background_focused: Color::from_rgba(100, 100, 100, 100),
+	    selection_background_inactive: Color::from_rgba(100, 100, 100, 36),
         }
     }
 }
@@ -237,5 +243,13 @@ impl Style {
         } else {
             self.slider_bar_inactive
         }
+    }
+
+    pub fn selection_background(&self, focused: bool) -> Color {
+	if focused {
+	    self.selection_background_focused
+	} else {
+	    self.selection_background_inactive
+	}
     }
 }

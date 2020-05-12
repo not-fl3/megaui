@@ -1,6 +1,6 @@
 use crate::{
     hash,
-    types::{Rect, Vector2, Color},
+    types::{Rect, Vector2},
     ui::InputCharacter,
     Id, Layout, Ui,
 };
@@ -13,10 +13,25 @@ pub struct Editbox {
     line_height: f32,
 }
 
+enum ClickState {
+    None,
+    SelectingChars { selection_begin: u32 },
+    SelectingWords { selected_word: (u32, u32) },
+    SelectingLines { selected_line: (u32, u32) },
+    Selected,
+}
+impl Default for ClickState {
+    fn default() -> ClickState {
+        ClickState::None
+    }
+}
 #[derive(Default)]
 struct EditboxState {
     cursor: u32,
-
+    click_state: ClickState,
+    clicks_counter: u32,
+    current_click: u32,
+    last_click: u32,
     selection: Option<(u32, u32)>,
 }
 
@@ -50,10 +65,66 @@ impl EditboxState {
         cursor_tmp - self.cursor
     }
 
+    fn find_word_begin(&self, text: &str) -> u32 {
+        let mut cursor_tmp = self.cursor;
+        let mut offset = 0;
+
+        while cursor_tmp > 0 {
+            let current_char = text.chars().nth(cursor_tmp as usize - 1).unwrap_or(' ');
+            if current_char == ' ' || current_char == '\n' {
+                break;
+            }
+            offset += 1;
+            cursor_tmp -= 1;
+        }
+        offset
+    }
+
+    fn find_word_end(&self, text: &str) -> u32 {
+        let mut cursor_tmp = self.cursor;
+        let mut offset = 0;
+
+        while cursor_tmp < text.len() as u32 {
+            let current_char = text.chars().nth(cursor_tmp as usize).unwrap_or(' ');
+            if current_char == ' ' || current_char == '\n' {
+                break;
+            }
+            cursor_tmp += 1;
+            offset += 1;
+        }
+        offset
+    }
+
     fn insert_character(&mut self, text: &mut String, character: char) {
+	self.delete_selected(text);
         self.selection = None;
         text.insert(self.cursor as usize, character);
         self.cursor += 1;
+    }
+
+    fn delete_selected(&mut self, text: &mut String) {
+        if let Some((start, end)) = self.selection {
+            let min = start.min(end) as usize;
+            let max = start.max(end) as usize;
+
+            text.replace_range(min..max, "");
+
+            self.cursor = start;
+        }
+        self.selection = None;
+    }
+
+    fn delete_next_character(&mut self, text: &mut String) {
+        if self.cursor < text.len() as u32 && text.len() != 0 {
+            text.remove(self.cursor as usize);
+        }
+    }
+
+    fn delete_current_character(&mut self, text: &mut String) {
+        if self.cursor > 0 {
+            text.remove(self.cursor as usize - 1);
+            self.cursor -= 1;
+        }
     }
 
     fn move_cursor(&mut self, text: &String, dx: i32, shift: bool) {
@@ -88,6 +159,116 @@ impl EditboxState {
                 break;
             }
             self.move_cursor(text, 1, shift);
+        }
+    }
+
+    fn deselect(&mut self) {
+        self.selection = None;
+    }
+
+    fn select_word(&mut self, text: &str) -> (u32, u32) {
+        let to_word_begin = self.find_word_begin(text) as u32;
+        let to_word_end = self.find_word_end(text) as u32;
+        let new_selection = (self.cursor - to_word_begin, self.cursor + to_word_end);
+
+        self.selection = Some(new_selection);
+        new_selection
+    }
+
+    fn select_line(&mut self, text: &str) -> (u32, u32) {
+        let to_line_begin = self.find_line_begin(text) as u32;
+        let to_line_end = self.find_line_end(text) as u32;
+        let new_selection = (self.cursor - to_line_begin, self.cursor + to_line_end);
+
+        self.selection = Some(new_selection);
+        new_selection
+    }
+
+    fn click_down(&mut self, text: &str, cursor: u32) {
+        self.current_click = cursor;
+
+        if self.last_click == self.current_click {
+            self.clicks_counter += 1;
+            match self.clicks_counter % 3 {
+                0 => {
+                    self.deselect();
+                    self.click_state = ClickState::None;
+                }
+                1 => {
+                    let selected_word = self.select_word(text);
+                    self.click_state = ClickState::SelectingWords { selected_word };
+                }
+                2 => {
+                    let selected_line = self.select_line(text);
+                    self.click_state = ClickState::SelectingLines { selected_line }
+                }
+                _ => unreachable!(),
+            }
+        } else {
+            self.clicks_counter = 0;
+            self.click_state = ClickState::SelectingChars {
+                selection_begin: cursor,
+            };
+            self.selection = Some((cursor, cursor));
+        }
+    }
+
+    fn click_move(&mut self, text: &str, cursor: u32) {
+        self.cursor = cursor;
+
+        if self.cursor != self.last_click {
+            self.clicks_counter = 0;
+        }
+
+        match self.click_state {
+            ClickState::SelectingChars { selection_begin } => {
+                self.selection = Some((selection_begin, cursor));
+            }
+            ClickState::SelectingWords {
+                selected_word: (from, to),
+            } => {
+                if cursor < from {
+                    let word_begin = self.cursor - self.find_word_begin(text);
+                    self.selection = Some((word_begin, to));
+                    self.cursor = word_begin;
+                } else if cursor > to {
+                    let word_end = self.cursor + self.find_word_end(text);
+                    self.selection = Some((from, word_end));
+                    self.cursor = word_end;
+                } else {
+                    self.selection = Some((from, to));
+                    self.cursor = to;
+                }
+            }
+            ClickState::SelectingLines {
+                selected_line: (from, to),
+            } => {
+                if cursor < from {
+                    let line_begin = self.cursor - self.find_line_begin(text);
+                    let line_end = self.cursor + self.find_line_end(text);
+                    self.selection = Some((line_begin, to));
+                    self.cursor = line_end;
+                } else if cursor > to {
+                    let line_end = self.cursor + self.find_line_end(text);
+                    self.selection = Some((from, line_end));
+                    self.cursor = line_end;
+                } else {
+                    self.selection = Some((from, to));
+                    self.cursor = to;
+                }
+            }
+            _ => {}
+        }
+
+        self.last_click = cursor;
+    }
+
+    fn click_up(&mut self, _text: &str) {
+        self.click_state = ClickState::Selected;
+        if let Some((from, to)) = self.selection {
+            if from == to {
+                self.click_state = ClickState::None;
+            }
         }
     }
 }
@@ -147,19 +328,20 @@ impl Editbox {
                     key_code: KeyCode::Backspace,
                     ..
                 } => {
-                    state.selection = None;
-                    if state.cursor > 0 {
-                        text.remove(state.cursor as usize - 1);
-                        state.cursor -= 1;
+                    if state.selection.is_none() {
+                        state.delete_current_character(text);
+                    } else {
+                        state.delete_selected(text);
                     }
                 }
                 InputCharacter::ControlCode {
                     key_code: KeyCode::Delete,
                     ..
                 } => {
-                    state.selection = None;
-                    if state.cursor < text.len() as u32 && text.len() != 0 {
-                        text.remove(state.cursor as usize);
+                    if state.selection.is_none() {
+                        state.delete_next_character(text);
+                    } else {
+                        state.delete_selected(text);
                     }
                 }
                 InputCharacter::ControlCode {
@@ -231,6 +413,13 @@ impl Editbox {
         }
 
         let input_focused = context.window.input_focused(self.id);
+
+	// reset selection state when lost focus
+	if context.focused == false || input_focused == false {
+	    state.deselect();
+	    state.clicks_counter = 0;
+	}
+
         if context.focused && input_focused {
             Self::apply_keyboard_input(&mut context.input.input_buffer, text, &mut state);
         }
@@ -242,7 +431,7 @@ impl Editbox {
 
         let rect = Rect::new(pos.x, pos.y, self.size.x, self.size.y);
 
-        if context.input.clicked() && rect.contains(context.input.mouse_position) {
+        if context.input.click_down() && rect.contains(context.input.mouse_position) {
             context.window.input_focus = Some(self.id);
         }
 
@@ -269,12 +458,12 @@ impl Editbox {
             .cursor
             .fit(size, Layout::Free(Vector2::new(5., 5.)));
 
+        context.scroll_area();
+
         context
             .window
             .draw_commands
             .clip(context.window.content_rect());
-
-        context.scroll_area();
 
         let state = context
             .storage_any
@@ -294,28 +483,29 @@ impl Editbox {
                     None,
                 );
             }
-            let mut advance = 0.;
+            let mut advance = 1.5; // 1.5 - hack to make cursor on newlines visible
             if character != '\n' {
                 advance = context
                     .window
                     .draw_commands
                     .draw_character(character, pos + Vector2::new(x, y), color)
                     .unwrap_or(0.);
-                if state.in_selected_range(n as u32) {
-		    let pos = pos + Vector2::new(x, y);
-		    let color = Color::new(0.1, 0.1, 0.1, 0.5);
-                    context
-                        .window
-                        .draw_commands
-                        .draw_rect(Rect::new(pos.x, pos.y, advance, 13.), None, color);
-                }
+            }
+            if state.in_selected_range(n as u32) {
+                let pos = pos + Vector2::new(x, y);
+
+                context.window.draw_commands.draw_rect(
+                    Rect::new(pos.x, pos.y - 2., advance, 13.),
+                    None,
+                    context.global_style.selection_background(context.focused),
+                );
             }
 
-            if context.input.clicked() {
+            if context.input.is_mouse_down() && input_focused {
                 let cursor_on_current_line =
                     (context.input.mouse_position.y - (pos.y + y + self.line_height / 2.)).abs()
                         < self.line_height / 2.;
-                let line_end = character == '\n';
+                let line_end = character == '\n' || n == text.len();
                 let cursor_after_line_end = context.input.mouse_position.x > (pos.x + x);
                 let clickable_character = character != '\n';
                 let cursor_on_character =
@@ -328,7 +518,11 @@ impl Editbox {
                     || (cursor_on_current_line && clickable_character && cursor_on_character)
                     || (last_character && cursor_below_line)
                 {
-                    state.cursor = n as u32;
+                    if context.input.click_down() {
+                        state.click_down(text, n as u32);
+                    } else {
+                        state.click_move(text, n as u32);
+                    }
                 }
             }
 
@@ -337,6 +531,10 @@ impl Editbox {
                 y += self.line_height;
                 x = LEFT_MARGIN;
             }
+        }
+
+        if context.input.click_up() && input_focused {
+            state.click_up(text);
         }
 
         let context = ui.get_active_window_context();
