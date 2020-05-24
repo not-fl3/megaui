@@ -42,6 +42,8 @@ pub struct Cursor {
     pub scroll: Scroll,
     pub area: Rect,
     pub margin: f32,
+    pub next_same_line: bool,
+    pub max_row_y: f32,
 }
 
 impl Cursor {
@@ -63,35 +65,49 @@ impl Cursor {
                 initial_scroll: Vector2::new(0., 0.),
             },
             area,
+	    next_same_line: false,
+	    max_row_y: 0.
         }
     }
 
     pub fn reset(&mut self) {
         self.x = self.start_x;
         self.y = self.start_y;
+	self.max_row_y = 0.;
         self.ident = 0.;
         self.scroll.inner_rect_previous_frame = self.scroll.inner_rect;
         self.scroll.inner_rect = Rect::new(0., 0., self.area.w, self.area.h);
     }
 
-    pub fn fit(&mut self, size: Vector2, layout: Layout) -> Vector2 {
+    pub fn fit(&mut self, size: Vector2, mut layout: Layout) -> Vector2 {
         let res;
 
+	if self.next_same_line {
+	    self.next_same_line = false;
+	    layout = Layout::Horizontal;
+	}
         match layout {
             Layout::Horizontal => {
+		self.max_row_y = self.max_row_y.max(size.y);
+
                 if self.x + size.x < self.area.w as f32 - self.margin * 2. {
                     res = Vector2::new(self.x, self.y);
                 } else {
                     self.x = self.margin;
-                    self.y += size.y + self.margin; // TODO: not size.y, but previous row max y, which is currently unknown :(
+                    self.y += self.max_row_y + self.margin;
+		    self.max_row_y = 0.;
                     res = Vector2::new(self.x, self.y);
                 }
                 self.x += size.x + self.margin;
             }
             Layout::Vertical => {
+		if self.x != self.margin {
+		    self.x = self.margin;
+		    self.y += self.max_row_y;
+		}
                 res = Vector2::new(self.x, self.y);
-                self.x = self.margin;
-                self.y += size.y + self.margin
+		self.x += size.x + self.margin;
+                self.max_row_y = size.y + self.margin;
             }
             Layout::Free(point) => {
                 res = point;

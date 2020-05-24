@@ -36,18 +36,20 @@ impl<'a> Label<'a> {
     pub fn ui(self, ui: &mut Ui) {
         let context = ui.get_active_window_context();
 
-        let size = Vector2::new(
-            150.,
-            self.multiline.map_or(14., |line_height| {
-                line_height * self.label.split('\n').count() as f32
-            }),
-        );
+        let mut size = context
+            .window
+            .draw_commands
+            .label_size(&self.label, self.multiline);
+
+        size.y += context.global_style.margin * 2.;
 
         let color = context.global_style.text(context.focused);
         let pos = context
             .window
             .cursor
-            .fit(size, self.position.map_or(Layout::Vertical, Layout::Free));
+            .fit(size, self.position.map_or(Layout::Vertical, Layout::Free))
+            + Vector2::new(0., context.global_style.margin);
+
         if let Some(line_height) = self.multiline {
             for (n, line) in self.label.split('\n').enumerate() {
                 context.window.draw_commands.draw_label(

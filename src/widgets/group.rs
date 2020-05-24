@@ -50,6 +50,8 @@ impl Group {
 
         let parent = ui.get_active_window_context();
 
+        let parent_rect = parent.window.content_rect();
+
         parent.window.childs.push(self.id);
 
         let pos = parent.window.cursor.fit(
@@ -97,6 +99,10 @@ impl Group {
             }
         }
 
+	context.window.draw_commands.clip(parent_rect);
+
+	context.scroll_area();
+
         let clip_rect = context.window.content_rect();
         context.window.draw_commands.clip(clip_rect);
         context.window.draw_commands.draw_rect(
@@ -106,8 +112,6 @@ impl Group {
                 .drag_border(context.focused, hovered, self.highlight),
             None,
         );
-
-        context.scroll_area();
 
         f(ui);
 

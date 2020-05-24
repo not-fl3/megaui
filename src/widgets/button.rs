@@ -36,10 +36,13 @@ impl<'a> Button<'a> {
     pub fn ui(self, ui: &mut Ui) -> bool {
         let context = ui.get_active_window_context();
 
-        // TODO: document somewhere that draw_label assumes monospaces font with fixed size
-        let size = self
-            .size
-            .unwrap_or(Vector2::new(self.label.len() as f32 * 8. + 5., 17.));
+        let size = self.size.unwrap_or_else(|| {
+            context.window.draw_commands.label_size(&self.label, None)
+                + Vector2::new(
+                    context.global_style.margin_button * 2.,
+                    context.global_style.margin_button,
+                )
+        });
 
         let pos = context
             .window

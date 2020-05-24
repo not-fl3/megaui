@@ -31,6 +31,7 @@ pub(crate) struct Window {
     pub want_close: bool,
     pub input_focus: Option<Id>,
 }
+
 impl Window {
     pub fn new(
         id: Id,
@@ -105,6 +106,10 @@ impl Window {
             self.title_height,
         )
     }
+
+    pub fn same_line(&mut self) {
+	self.cursor.next_same_line = true;
+    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -123,7 +128,7 @@ pub enum Drag {
 pub struct Ui {
     input: Input,
     pub(crate) style: Style,
-    frame: u64,
+    pub(crate) frame: u64,
 
     moving: Option<(Id, Vector2)>,
     windows: HashMap<Id, Window>,
@@ -322,12 +327,13 @@ impl InputHandler for Ui {
             .push(input::InputCharacter::Char(character));
     }
 
-    fn key_down(&mut self, key: crate::input_handler::KeyCode, shift: bool) {
+    fn key_down(&mut self, key: crate::input_handler::KeyCode, shift: bool, ctrl: bool) {
         self.input
             .input_buffer
             .push(input::InputCharacter::ControlCode {
                 key_code: key,
                 modifier_shift: shift,
+		modifier_ctrl: ctrl
             });
     }
 }
@@ -565,5 +571,10 @@ impl Ui {
         if let Some(window) = self.windows.get_mut(&id) {
             window.set_position(position);
         }
+    }
+
+    pub fn same_line(&mut self) {
+        let context = self.get_active_window_context();
+	context.window.same_line();
     }
 }

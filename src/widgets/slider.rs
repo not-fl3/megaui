@@ -34,9 +34,8 @@ impl<'a> Slider<'a> {
 
         let size = Vector2::new(
             context.window.cursor.area.w
-                - context.global_style.margin * 2.
-                - context.window.cursor.ident
-                - context.window.cursor.x,
+                - context.global_style.margin * 3.
+                - context.window.cursor.ident,
             19.,
         );
         let pos = context.window.cursor.fit(size, Layout::Vertical);

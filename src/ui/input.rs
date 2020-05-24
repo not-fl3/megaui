@@ -6,6 +6,7 @@ pub enum InputCharacter {
     ControlCode {
         key_code: crate::input_handler::KeyCode,
         modifier_shift: bool,
+	modifier_ctrl: bool
     },
 }
 
