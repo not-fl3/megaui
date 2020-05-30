@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum KeyCode {
     Up,
     Down,
@@ -9,6 +9,12 @@ pub enum KeyCode {
     Enter,
     Home,
     End,
+    A, // select all
+    Z, // undo
+    Y, // redo
+    C, // copy
+    V, // paste
+    X, // cut
 }
 
 pub trait InputHandler {
@@ -16,6 +22,6 @@ pub trait InputHandler {
     fn mouse_up(&mut self, _: (f32, f32));
     fn mouse_wheel(&mut self, x: f32, y: f32);
     fn mouse_move(&mut self, position: (f32, f32));
-    fn char_event(&mut self, character: char);
+    fn char_event(&mut self, character: char, shift: bool, ctrl: bool);
     fn key_down(&mut self, key_down: KeyCode, shift: bool, ctrl: bool);
 }

@@ -1,3 +1,139 @@
+trait Command {
+    fn apply(&self, text_cursor: &mut u32, text: &mut String);
+    fn unapply(&self, text_cursor: &mut u32, text: &mut String);
+}
+
+struct InsertCharacter {
+    character: char,
+    cursor: u32,
+}
+
+impl InsertCharacter {
+    fn new(editor: &EditboxState, _text: &mut String, character: char) -> InsertCharacter {
+        InsertCharacter {
+            cursor: editor.cursor,
+            character,
+        }
+    }
+}
+
+impl Command for InsertCharacter {
+    fn apply(&self, text_cursor: &mut u32, text: &mut String) {
+        *text_cursor = self.cursor;
+        if self.cursor <= text.len() as u32 {
+            text.insert(self.cursor as usize, self.character);
+        }
+        *text_cursor += 1;
+    }
+    fn unapply(&self, text_cursor: &mut u32, text: &mut String) {
+        *text_cursor = self.cursor;
+        if self.cursor < text.len() as u32 {
+            text.remove(self.cursor as usize);
+        }
+    }
+}
+
+struct InsertString {
+    data: String,
+    cursor: u32,
+}
+
+impl InsertString {
+    fn new(editor: &EditboxState, _text: &mut String, data: String) -> InsertString {
+        InsertString {
+            cursor: editor.cursor,
+            data,
+        }
+    }
+}
+
+impl Command for InsertString {
+    fn apply(&self, text_cursor: &mut u32, text: &mut String) {
+        *text_cursor = self.cursor;
+        if self.cursor <= text.len() as u32 {
+            text.insert_str(self.cursor as usize, &self.data);
+        }
+        *text_cursor += self.data.len() as u32;
+    }
+
+    fn unapply(&self, text_cursor: &mut u32, text: &mut String) {
+        *text_cursor = self.cursor;
+        if self.cursor < text.len() as u32 {
+            let end = (self.cursor as usize + self.data.len()).min(text.len());
+
+            text.replace_range(self.cursor as usize..end, "");
+        }
+    }
+}
+
+struct DeleteCharacter {
+    character: char,
+    cursor: u32,
+}
+
+impl DeleteCharacter {
+    fn new(editor: &EditboxState, text: &mut String) -> Option<DeleteCharacter> {
+        let character = text.chars().nth(editor.cursor as usize);
+
+        character.map(|character| DeleteCharacter {
+            cursor: editor.cursor,
+            character,
+        })
+    }
+}
+
+impl Command for DeleteCharacter {
+    fn apply(&self, text_cursor: &mut u32, text: &mut String) {
+        *text_cursor = self.cursor;
+        if self.cursor < text.len() as u32 {
+            text.remove(self.cursor as usize);
+        }
+    }
+
+    fn unapply(&self, text_cursor: &mut u32, text: &mut String) {
+        *text_cursor = self.cursor + 1;
+        if self.cursor <= text.len() as u32 {
+            text.insert(self.cursor as usize, self.character);
+        }
+    }
+}
+
+struct DeleteRange {
+    range: (u32, u32),
+    data: String,
+}
+
+impl DeleteRange {
+    fn new(text: &mut String, (start, end): (u32, u32)) -> DeleteRange {
+        let min = start.min(end) as usize;
+        let max = start.max(end) as usize;
+
+        DeleteRange {
+            data: text[min..max].to_string(),
+            range: (start, end),
+        }
+    }
+}
+
+impl Command for DeleteRange {
+    fn apply(&self, text_cursor: &mut u32, text: &mut String) {
+        let (start, end) = self.range;
+        let min = start.min(end) as usize;
+        let max = start.max(end) as usize;
+
+        text.replace_range(min..max, "");
+
+        *text_cursor = min as u32;
+    }
+
+    fn unapply(&self, text_cursor: &mut u32, text: &mut String) {
+        let (start, end) = self.range;
+        let start = start.min(end);
+        text.insert_str(start as usize, &self.data);
+        *text_cursor = start;
+    }
+}
+
 #[derive(Debug)]
 pub enum ClickState {
     None,
@@ -22,9 +158,21 @@ pub struct EditboxState {
     pub last_click_time: f32,
     pub last_click: u32,
     pub selection: Option<(u32, u32)>,
+    undo_stack: Vec<Box<dyn Command>>,
+    redo_stack: Vec<Box<dyn Command>>,
 }
 
 impl EditboxState {
+    pub fn selected_text<'a>(&self, text: &'a str) -> Option<&'a str> {
+        if let Some((start, end)) = self.selection {
+            let min = start.min(end) as usize;
+            let max = start.max(end) as usize;
+
+            Some(&text[min..max])
+        } else {
+            None
+        }
+    }
     pub fn in_selected_range(&self, cursor: u32) -> bool {
         match self.selection {
             Some((start, end)) if start < end => cursor >= start && cursor < end,
@@ -62,7 +210,6 @@ impl EditboxState {
             || character == '\"'
     }
 
-
     pub fn find_word_begin(&self, text: &str, cursor: u32) -> u32 {
         let mut cursor_tmp = cursor;
         let mut offset = 0;
@@ -70,8 +217,8 @@ impl EditboxState {
         while cursor_tmp > 0 {
             let current_char = text.chars().nth(cursor_tmp as usize - 1).unwrap_or(' ');
             if Self::word_delimeter(current_char) || current_char == '\n' {
-		break;
-	    }
+                break;
+            }
             offset += 1;
             cursor_tmp -= 1;
         }
@@ -81,16 +228,16 @@ impl EditboxState {
     pub fn find_word_end(&self, text: &str, cursor: u32) -> u32 {
         let mut cursor_tmp = cursor;
         let mut offset = 0;
-	let mut space_skipping = false;
+        let mut space_skipping = false;
 
         while cursor_tmp < text.len() as u32 {
             let current_char = text.chars().nth(cursor_tmp as usize).unwrap_or(' ');
             if Self::word_delimeter(current_char) || current_char == '\n' {
-		space_skipping = true;
+                space_skipping = true;
             }
-	    if space_skipping && Self::word_delimeter(current_char) == false {
-		break;
-	    }
+            if space_skipping && Self::word_delimeter(current_char) == false {
+                break;
+            }
             cursor_tmp += 1;
             offset += 1;
         }
@@ -98,34 +245,49 @@ impl EditboxState {
     }
 
     pub fn insert_character(&mut self, text: &mut String, character: char) {
-        self.delete_selected(text);
+        self.redo_stack.clear();
+
         self.selection = None;
-        text.insert(self.cursor as usize, character);
-        self.cursor += 1;
+
+        let insert_command = InsertCharacter::new(self, text, character);
+        insert_command.apply(&mut self.cursor, text);
+        self.undo_stack.push(Box::new(insert_command));
+    }
+
+    pub fn insert_string(&mut self, text: &mut String, string: String) {
+        self.redo_stack.clear();
+
+        self.selection = None;
+
+        let insert_command = InsertString::new(self, text, string.to_owned());
+        insert_command.apply(&mut self.cursor, text);
+        self.undo_stack.push(Box::new(insert_command));
     }
 
     pub fn delete_selected(&mut self, text: &mut String) {
-        if let Some((start, end)) = self.selection {
-            let min = start.min(end) as usize;
-            let max = start.max(end) as usize;
+        self.redo_stack.clear();
 
-            text.replace_range(min..max, "");
-
-            self.cursor = start;
+        if let Some(range) = self.selection {
+            let delete_command = DeleteRange::new(text, range);
+            delete_command.apply(&mut self.cursor, text);
+            self.undo_stack.push(Box::new(delete_command));
         }
         self.selection = None;
     }
 
     pub fn delete_next_character(&mut self, text: &mut String) {
-        if self.cursor < text.len() as u32 && text.len() != 0 {
-            text.remove(self.cursor as usize);
+        self.redo_stack.clear();
+
+        if let Some(delete_command) = DeleteCharacter::new(self, text) {
+            delete_command.apply(&mut self.cursor, text);
+            self.undo_stack.push(Box::new(delete_command));
         }
     }
 
     pub fn delete_current_character(&mut self, text: &mut String) {
         if self.cursor > 0 {
-            text.remove(self.cursor as usize - 1);
             self.cursor -= 1;
+            self.delete_next_character(text);
         }
     }
 
@@ -176,7 +338,13 @@ impl EditboxState {
         }
     }
 
+    pub fn select_all(&mut self, text: &str) {
+        self.selection = Some((0, text.len() as u32));
+        self.click_state = ClickState::None;
+    }
+
     pub fn deselect(&mut self) {
+        self.click_state = ClickState::None;
         self.selection = None;
     }
 
@@ -291,7 +459,27 @@ impl EditboxState {
         if let Some((from, to)) = self.selection {
             if from != to {
                 self.click_state = ClickState::Selected;
+            } else {
+                self.selection = None;
             }
+        }
+    }
+
+    pub fn undo(&mut self, text: &mut String) {
+        let command = self.undo_stack.pop();
+
+        if let Some(command) = command {
+            command.unapply(&mut self.cursor, text);
+            self.redo_stack.push(command);
+        }
+    }
+
+    pub fn redo(&mut self, text: &mut String) {
+        let command = self.redo_stack.pop();
+
+        if let Some(command) = command {
+            command.apply(&mut self.cursor, text);
+            self.undo_stack.push(command);
         }
     }
 }

@@ -12,7 +12,7 @@ use cursor::Cursor;
 use input::Input;
 
 pub use cursor::Layout;
-pub use input::InputCharacter;
+pub use input::{InputCharacter, Key, KeyCode};
 
 pub(crate) struct Window {
     pub id: Id,
@@ -108,7 +108,7 @@ impl Window {
     }
 
     pub fn same_line(&mut self) {
-	self.cursor.next_same_line = true;
+        self.cursor.next_same_line = true;
     }
 }
 
@@ -143,6 +143,9 @@ pub struct Ui {
     child_window_stack: Vec<Id>,
 
     pub font_atlas: Rc<FontAtlas>,
+
+    clipboard_selection: String,
+    clipboard: Box<dyn crate::ClipboardObject>,
 }
 
 #[derive(Default)]
@@ -179,6 +182,8 @@ pub(crate) struct WindowContext<'a> {
     pub storage_any: &'a mut AnyStorage,
     pub global_style: &'a Style,
     pub input: &'a mut Input,
+    pub clipboard_selection: &'a mut String,
+    pub clipboard: &'a mut dyn crate::ClipboardObject,
     pub focused: bool,
 }
 
@@ -321,20 +326,23 @@ impl InputHandler for Ui {
         }
     }
 
-    fn char_event(&mut self, character: char) {
-        self.input
-            .input_buffer
-            .push(input::InputCharacter::Char(character));
+    fn char_event(&mut self, character: char, shift: bool, ctrl: bool) {
+        self.input.input_buffer.push(input::InputCharacter {
+            key: input::Key::Char(character),
+            modifier_shift: shift,
+            modifier_ctrl: ctrl,
+        });
     }
 
     fn key_down(&mut self, key: crate::input_handler::KeyCode, shift: bool, ctrl: bool) {
-        self.input
-            .input_buffer
-            .push(input::InputCharacter::ControlCode {
-                key_code: key,
-                modifier_shift: shift,
-		modifier_ctrl: ctrl
-            });
+        if ctrl && (key == KeyCode::C || key == KeyCode::X) {
+            self.clipboard.set(&self.clipboard_selection);
+        }
+        self.input.input_buffer.push(input::InputCharacter {
+            key: input::Key::KeyCode(key),
+            modifier_shift: shift,
+            modifier_ctrl: ctrl,
+        });
     }
 }
 
@@ -370,6 +378,8 @@ impl Ui {
             storage_u32: HashMap::default(),
             storage_any: AnyStorage::default(),
             font_atlas: Rc::new(font_atlas),
+            clipboard_selection: String::new(),
+            clipboard: Box::new(crate::LocalClipboard::new()),
         }
     }
 
@@ -445,6 +455,8 @@ impl Ui {
             drag_hovered: &mut self.drag_hovered,
             storage_u32: &mut self.storage_u32,
             storage_any: &mut self.storage_any,
+            clipboard_selection: &mut self.clipboard_selection,
+            clipboard: &mut *self.clipboard,
         }
     }
 
@@ -468,7 +480,13 @@ impl Ui {
             drag_hovered: &mut self.drag_hovered,
             storage_u32: &mut self.storage_u32,
             storage_any: &mut self.storage_any,
+            clipboard_selection: &mut self.clipboard_selection,
+            clipboard: &mut *self.clipboard
         }
+    }
+
+    pub fn set_clipboard_object<T: crate::ClipboardObject + 'static>(&mut self, clipboard: T) {
+        self.clipboard = Box::new(clipboard);
     }
 
     pub fn is_mouse_over(&self, mouse_position: Vector2) -> bool {
@@ -575,6 +593,6 @@ impl Ui {
 
     pub fn same_line(&mut self) {
         let context = self.get_active_window_context();
-	context.window.same_line();
+        context.window.same_line();
     }
 }

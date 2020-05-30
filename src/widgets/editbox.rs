@@ -1,7 +1,7 @@
 use crate::{
     hash,
     types::{Rect, Vector2},
-    ui::InputCharacter,
+    ui::{InputCharacter, Key, KeyCode},
     Id, Layout, Ui,
 };
 
@@ -64,32 +64,88 @@ impl<'a> Editbox<'a> {
     fn apply_keyboard_input(
         &self,
         input_buffer: &mut Vec<InputCharacter>,
+        clipboard: &mut dyn crate::ClipboardObject,
         text: &mut String,
         state: &mut EditboxState,
     ) {
         for character in input_buffer.drain(0..) {
-            use crate::input_handler::KeyCode;
+            use KeyCode::*;
 
             match character {
-                InputCharacter::Char(character) => {
+                InputCharacter {
+                    key: Key::Char(_),
+                    modifier_ctrl: true,
+                    ..
+                } => {}
+                InputCharacter {
+                    key: Key::Char(character),
+                    modifier_ctrl: false,
+                    ..
+                } => {
                     if character != 13 as char
                         && character != 10 as char
                         && character.is_ascii()
                         && self.filter.as_ref().map_or(true, |f| f(character))
                     {
+                        if state.selection.is_some() {
+                            state.delete_selected(text);
+                        }
                         state.insert_character(text, character);
                     }
                 }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::Enter,
+                InputCharacter {
+                    key: Key::KeyCode(Z),
+                    modifier_ctrl: true,
+                    ..
+                } => {
+                    state.undo(text);
+                }
+                InputCharacter {
+                    key: Key::KeyCode(Y),
+                    modifier_ctrl: true,
+                    ..
+                } => {
+                    state.redo(text);
+                }
+                InputCharacter {
+                    key: Key::KeyCode(X),
+                    modifier_ctrl: true,
+                    ..
+                } => {
+                    state.delete_selected(text);
+                }
+                InputCharacter {
+                    key: Key::KeyCode(V),
+                    modifier_ctrl: true,
+                    ..
+                } => {
+                    if let Some(clipboard) = clipboard.get() {
+                        if clipboard.len() != 0 {
+                            if state.selection.is_some() {
+                                state.delete_selected(text);
+                            }
+
+                            state.insert_string(text, clipboard);
+                        }
+                    }
+                }
+                InputCharacter {
+                    key: Key::KeyCode(A),
+                    modifier_ctrl: true,
+                    ..
+                } => {
+                    state.select_all(text);
+                }
+                InputCharacter {
+                    key: Key::KeyCode(Enter),
                     ..
                 } => {
                     if self.multiline {
                         state.insert_character(text, '\n');
                     }
                 }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::Backspace,
+                InputCharacter {
+                    key: Key::KeyCode(Backspace),
                     ..
                 } => {
                     if state.selection.is_none() {
@@ -98,8 +154,8 @@ impl<'a> Editbox<'a> {
                         state.delete_selected(text);
                     }
                 }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::Delete,
+                InputCharacter {
+                    key: Key::KeyCode(Delete),
                     ..
                 } => {
                     if state.selection.is_none() {
@@ -108,50 +164,48 @@ impl<'a> Editbox<'a> {
                         state.delete_selected(text);
                     }
                 }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::Right,
+                InputCharacter {
+                    key: Key::KeyCode(Right),
                     modifier_shift,
-		    modifier_ctrl
-                } => {
-		    if modifier_ctrl {
-			state.move_cursor_next_word(text, modifier_shift);
-
-		    } else {
-			state.move_cursor(text, 1, modifier_shift);
-		    }
-                }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::Left,
-                    modifier_shift,
-		    modifier_ctrl
+                    modifier_ctrl,
                 } => {
                     if modifier_ctrl {
-			state.move_cursor_prev_word(text, modifier_shift);
-
-		    } else {
-			state.move_cursor(text, -1, modifier_shift);
-		    }
+                        state.move_cursor_next_word(text, modifier_shift);
+                    } else {
+                        state.move_cursor(text, 1, modifier_shift);
+                    }
                 }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::Home,
+                InputCharacter {
+                    key: Key::KeyCode(Left),
                     modifier_shift,
-		    ..
+                    modifier_ctrl,
+                } => {
+                    if modifier_ctrl {
+                        state.move_cursor_prev_word(text, modifier_shift);
+                    } else {
+                        state.move_cursor(text, -1, modifier_shift);
+                    }
+                }
+                InputCharacter {
+                    key: Key::KeyCode(Home),
+                    modifier_shift,
+                    ..
                 } => {
                     let to_line_begin = state.find_line_begin(&text) as i32;
                     state.move_cursor(text, -to_line_begin, modifier_shift);
                 }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::End,
+                InputCharacter {
+                    key: Key::KeyCode(End),
                     modifier_shift,
-		    ..
+                    ..
                 } => {
                     let to_line_end = state.find_line_end(&text) as i32;
                     state.move_cursor(text, to_line_end, modifier_shift);
                 }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::Up,
+                InputCharacter {
+                    key: Key::KeyCode(Up),
                     modifier_shift,
-		    ..
+                    ..
                 } => {
                     let to_line_begin = state.find_line_begin(&text) as i32;
                     state.move_cursor(text, -to_line_begin, modifier_shift);
@@ -162,10 +216,10 @@ impl<'a> Editbox<'a> {
                         state.move_cursor(text, offset, modifier_shift);
                     }
                 }
-                InputCharacter::ControlCode {
-                    key_code: KeyCode::Down,
+                InputCharacter {
+                    key: Key::KeyCode(Down),
                     modifier_shift,
-		    ..
+                    ..
                 } => {
                     let to_line_begin = state.find_line_begin(&text) as i32;
                     let to_line_end = state.find_line_end(&text) as i32;
@@ -176,6 +230,7 @@ impl<'a> Editbox<'a> {
                         state.move_cursor_within_line(text, to_line_begin, modifier_shift);
                     }
                 }
+                _ => {}
             }
         }
     }
@@ -186,10 +241,28 @@ impl<'a> Editbox<'a> {
 
         let context = ui.get_active_window_context();
 
+        let pos = self
+            .pos
+            .unwrap_or_else(|| context.window.cursor.fit(self.size, Layout::Vertical));
+
+        let rect = Rect::new(pos.x, pos.y, self.size.x, self.size.y);
+
+        let hovered = rect.contains(context.input.mouse_position);
+
+        if context.input.click_down() && hovered {
+            context.window.input_focus = Some(self.id);
+        }
+        if context.window.input_focused(self.id) && context.input.click_down() && hovered == false {
+            context.window.input_focus = None;
+        }
+
         let mut state = context
             .storage_any
             .get_or_default::<EditboxState>(hash!(self.id, "cursor"));
 
+        if let Some(selected) = state.selected_text(text) {
+            *context.clipboard_selection = selected.to_owned();
+        }
         // in case the string was updated outside of editbox
         if state.cursor > text.len() as u32 {
             state.cursor = text.len() as u32;
@@ -207,24 +280,15 @@ impl<'a> Editbox<'a> {
         }
 
         if context.focused && input_focused {
-            self.apply_keyboard_input(&mut context.input.input_buffer, text, &mut state);
+            self.apply_keyboard_input(
+                &mut context.input.input_buffer,
+                &mut *context.clipboard,
+                text,
+                &mut state,
+            );
         }
 
         let color = context.global_style.text(context.focused);
-        let pos = self
-            .pos
-            .unwrap_or_else(|| context.window.cursor.fit(self.size, Layout::Vertical));
-
-        let rect = Rect::new(pos.x, pos.y, self.size.x, self.size.y);
-
-        let hovered = rect.contains(context.input.mouse_position);
-
-        if context.input.click_down() && hovered {
-            context.window.input_focus = Some(self.id);
-        }
-        if input_focused && context.input.click_down() && hovered == false {
-            context.window.input_focus = None;
-        }
 
         // draw rect in parent window
 

@@ -1,13 +1,18 @@
 use crate::types::Vector2;
 
+pub use crate::input_handler::KeyCode;
+
 #[derive(Clone, Debug)]
-pub enum InputCharacter {
+pub enum Key {
     Char(char),
-    ControlCode {
-        key_code: crate::input_handler::KeyCode,
-        modifier_shift: bool,
-	modifier_ctrl: bool
-    },
+    KeyCode(KeyCode)
+}
+
+#[derive(Clone, Debug)]
+pub struct InputCharacter {
+    pub key: Key,
+    pub modifier_shift: bool,
+    pub modifier_ctrl: bool
 }
 
 #[derive(Default, Clone)]
