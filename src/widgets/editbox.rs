@@ -307,7 +307,7 @@ impl<'a> Editbox<'a> {
         parent.window.childs.push(self.id);
         let parent_id = Some(parent.window.id);
 
-        let mut context = ui.begin_window(self.id, parent_id, pos, self.size, false);
+        let mut context = ui.begin_window(self.id, parent_id, pos, self.size, 0., false);
 
         let size = Vector2::new(150., self.line_height * text.split('\n').count() as f32);
 

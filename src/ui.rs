@@ -393,6 +393,7 @@ impl Ui {
         parent: Option<Id>,
         position: Vector2,
         size: Vector2,
+        title_height: f32,
         movable: bool,
     ) -> WindowContext {
         if let Some(active_window) = self.active_window {
@@ -401,11 +402,6 @@ impl Ui {
         self.active_window = Some(id);
 
         let focused = self.is_focused(id);
-        let title_height = if parent.is_none() {
-            self.style.title_height
-        } else {
-            0.
-        };
         let margin = self.style.margin;
         let font_atlas = self.font_atlas.clone();
         let windows_focus_order = &mut self.windows_focus_order;

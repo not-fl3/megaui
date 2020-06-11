@@ -13,6 +13,7 @@ pub struct Window {
     enabled: bool,
     force_focus: bool,
     movable: bool,
+    titlebar: bool,
     label: Option<String>,
 }
 
@@ -26,6 +27,7 @@ impl Window {
             enabled: true,
             force_focus: false,
             movable: true,
+            titlebar: true,
             label: None,
         }
     }
@@ -48,6 +50,10 @@ impl Window {
         }
     }
 
+    pub fn titlebar(self, titlebar: bool) -> Window {
+        Window { titlebar, ..self }
+    }
+
     pub fn enabled(self, enabled: bool) -> Window {
         Window { enabled, ..self }
     }
@@ -60,7 +66,19 @@ impl Window {
     }
 
     pub fn ui<F: FnOnce(&mut Ui)>(self, ui: &mut Ui, f: F) -> bool {
-        let mut context = ui.begin_window(self.id, None, self.position, self.size, self.movable);
+        let title_height = if self.titlebar {
+            ui.style.title_height
+        } else {
+            0.
+        };
+        let mut context = ui.begin_window(
+            self.id,
+            None,
+            self.position,
+            self.size,
+            title_height,
+            self.movable,
+        );
 
         self.draw_window_frame(&mut context);
         if self.close_button && self.draw_close_button(&mut context) {
@@ -115,18 +133,20 @@ impl Window {
             style.background(focused),
         );
 
-        if let Some(label) = &self.label {
-            context.window.draw_commands.draw_label(
-                &label,
-                Vector2::new(position.x + style.margin, position.y + style.margin),
-                context.global_style.title(focused),
+        if self.titlebar {
+            if let Some(label) = &self.label {
+                context.window.draw_commands.draw_label(
+                    &label,
+                    Vector2::new(position.x + style.margin, position.y + style.margin),
+                    context.global_style.title(focused),
+                );
+            }
+            context.window.draw_commands.draw_line(
+                Vector2::new(position.x, position.y + style.title_height),
+                Vector2::new(position.x + size.x, position.y + style.title_height),
+                style.window_border(focused),
             );
         }
-        context.window.draw_commands.draw_line(
-            Vector2::new(position.x, position.y + style.title_height),
-            Vector2::new(position.x + size.x, position.y + style.title_height),
-            style.window_border(focused),
-        );
     }
 }
 
