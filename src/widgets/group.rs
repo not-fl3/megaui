@@ -90,7 +90,7 @@ impl Group {
 
                 if context.input.is_mouse_down == false {
                     *context.dragging = None;
-                    drag = Drag::Dropped(context.input.mouse_position, *context.drag_hovered);
+                    drag = Drag::Dropped(context.input.mouse_position, *context.drag_hovered_previous_frame);
                 }
             }
 

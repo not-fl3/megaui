@@ -139,6 +139,7 @@ pub struct Ui {
 
     dragging: Option<(Id, DragState)>,
     drag_hovered: Option<Id>,
+    drag_hovered_previous_frame: Option<Id>,
     active_window: Option<Id>,
     child_window_stack: Vec<Id>,
 
@@ -178,6 +179,7 @@ pub(crate) struct WindowContext<'a> {
     pub window: &'a mut Window,
     pub dragging: &'a mut Option<(Id, DragState)>,
     pub drag_hovered: &'a mut Option<Id>,
+    pub drag_hovered_previous_frame: &'a mut Option<Id>,
     pub storage_u32: &'a mut HashMap<Id, u32>,
     pub storage_any: &'a mut AnyStorage,
     pub global_style: &'a Style,
@@ -375,6 +377,7 @@ impl Ui {
             active_window: None,
             child_window_stack: vec![],
             drag_hovered: None,
+            drag_hovered_previous_frame: None,
             storage_u32: HashMap::default(),
             storage_any: AnyStorage::default(),
             font_atlas: Rc::new(font_atlas),
@@ -449,6 +452,7 @@ impl Ui {
             global_style: &self.style,
             dragging: &mut self.dragging,
             drag_hovered: &mut self.drag_hovered,
+            drag_hovered_previous_frame: &mut self.drag_hovered_previous_frame,
             storage_u32: &mut self.storage_u32,
             storage_any: &mut self.storage_any,
             clipboard_selection: &mut self.clipboard_selection,
@@ -474,10 +478,11 @@ impl Ui {
             global_style: &self.style,
             dragging: &mut self.dragging,
             drag_hovered: &mut self.drag_hovered,
+            drag_hovered_previous_frame: &mut self.drag_hovered_previous_frame,
             storage_u32: &mut self.storage_u32,
             storage_any: &mut self.storage_any,
             clipboard_selection: &mut self.clipboard_selection,
-            clipboard: &mut *self.clipboard
+            clipboard: &mut *self.clipboard,
         }
     }
 
@@ -528,7 +533,6 @@ impl Ui {
     }
 
     pub fn new_frame(&mut self) {
-        self.drag_hovered = None;
         self.frame += 1;
 
         for (_, window) in &mut self.windows {
@@ -571,6 +575,8 @@ impl Ui {
     }
 
     pub fn end_frame(&mut self) {
+        self.drag_hovered_previous_frame = self.drag_hovered;
+        self.drag_hovered = None;
         self.input.reset();
     }
 
