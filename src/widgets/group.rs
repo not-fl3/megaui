@@ -86,7 +86,7 @@ impl Group {
             let id = *id;
 
             if id == self.id {
-                drag = Drag::Dragging;
+                drag = Drag::Dragging(context.input.mouse_position, *context.drag_hovered_previous_frame);
 
                 if context.input.is_mouse_down == false {
                     *context.dragging = None;

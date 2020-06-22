@@ -121,7 +121,7 @@ pub enum DragState {
 #[derive(Copy, Clone, Debug)]
 pub enum Drag {
     No,
-    Dragging,
+    Dragging(Vector2, Option<Id>),
     Dropped(Vector2, Option<Id>),
 }
 
