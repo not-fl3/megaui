@@ -25,7 +25,7 @@ impl Scroll {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Layout {
     Vertical,
     Horizontal,

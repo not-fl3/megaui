@@ -8,6 +8,7 @@ use crate::{
 pub struct Group {
     id: Id,
     position: Option<Vector2>,
+    layout: Layout,
     size: Vector2,
     draggable: bool,
     highlight: bool,
@@ -20,6 +21,7 @@ impl Group {
             id,
             size,
             position: None,
+            layout: Layout::Horizontal,
             draggable: false,
             highlight: false,
             hoverable: false,
@@ -31,6 +33,10 @@ impl Group {
             position: Some(position),
             ..self
         }
+    }
+
+    pub fn layout(self, layout: Layout) -> Group {
+        Group { layout, ..self }
     }
 
     pub fn draggable(self, draggable: bool) -> Group {
@@ -56,7 +62,7 @@ impl Group {
 
         let pos = parent.window.cursor.fit(
             self.size,
-            self.position.map_or(Layout::Horizontal, Layout::Free),
+            self.position.map_or(self.layout, Layout::Free),
         );
         let rect = Rect::new(pos.x, pos.y, self.size.x, self.size.y);
         let parent_id = Some(parent.window.id);
