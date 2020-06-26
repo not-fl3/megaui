@@ -24,6 +24,9 @@ impl Command for InsertCharacter {
             text.insert(self.cursor as usize, self.character);
         }
         *text_cursor += 1;
+        while !text.is_char_boundary(*text_cursor as usize) {
+            *text_cursor += 1;
+        }
     }
     fn unapply(&self, text_cursor: &mut u32, text: &mut String) {
         *text_cursor = self.cursor;
@@ -73,12 +76,15 @@ struct DeleteCharacter {
 
 impl DeleteCharacter {
     fn new(editor: &EditboxState, text: &mut String) -> Option<DeleteCharacter> {
-        let character = text.chars().nth(editor.cursor as usize);
-
-        character.map(|character| DeleteCharacter {
-            cursor: editor.cursor,
-            character,
-        })
+        let cursor = editor.cursor;
+        if (cursor as usize) < text.len() && text.is_char_boundary(cursor as usize) {
+            text[cursor as usize..].chars().next().map(|character| DeleteCharacter {
+                cursor,
+                character,
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -182,9 +188,9 @@ impl EditboxState {
     }
     pub fn find_line_begin(&self, text: &str) -> u32 {
         let mut line_position = 0;
-        let mut cursor_tmp = self.cursor;
+        let mut cursor_tmp = self.cursor.min(text.len().max(1) as u32 - 1 );
 
-        while cursor_tmp > 0 && text.chars().nth(cursor_tmp as usize - 1).unwrap_or('x') != '\n' {
+        while cursor_tmp > 0 && text.as_bytes()[cursor_tmp as usize] != b'\n' {
             cursor_tmp -= 1;
             line_position += 1;
         }
@@ -192,9 +198,9 @@ impl EditboxState {
     }
 
     pub fn find_line_end(&self, text: &str) -> u32 {
-        let mut cursor_tmp = self.cursor;
+        let mut cursor_tmp = self.cursor.min(text.len() as u32);
         while cursor_tmp < text.len() as u32
-            && text.chars().nth(cursor_tmp as usize).unwrap_or('x') != '\n'
+            && text.as_bytes()[cursor_tmp as usize] != b'\n'
         {
             cursor_tmp += 1;
         }
@@ -202,12 +208,12 @@ impl EditboxState {
         cursor_tmp - self.cursor
     }
 
-    pub fn word_delimeter(character: char) -> bool {
-        character == ' '
-            || character == '('
-            || character == ')'
-            || character == ';'
-            || character == '\"'
+    pub fn word_delimeter(character: u8) -> bool {
+        character == b' '
+            || character == b'('
+            || character == b')'
+            || character == b';'
+            || character == b'\"'
     }
 
     pub fn find_word_begin(&self, text: &str, cursor: u32) -> u32 {
@@ -215,8 +221,12 @@ impl EditboxState {
         let mut offset = 0;
 
         while cursor_tmp > 0 {
-            let current_char = text.chars().nth(cursor_tmp as usize - 1).unwrap_or(' ');
-            if Self::word_delimeter(current_char) || current_char == '\n' {
+            let current_char = if (cursor_tmp as usize) < text.len() {
+                text.as_bytes()[cursor_tmp as usize]
+            } else {
+                b' '
+            };
+            if Self::word_delimeter(current_char) || current_char == b'\n' {
                 break;
             }
             offset += 1;
@@ -231,8 +241,8 @@ impl EditboxState {
         let mut space_skipping = false;
 
         while cursor_tmp < text.len() as u32 {
-            let current_char = text.chars().nth(cursor_tmp as usize).unwrap_or(' ');
-            if Self::word_delimeter(current_char) || current_char == '\n' {
+            let current_char = text.as_bytes()[cursor_tmp as usize];
+            if Self::word_delimeter(current_char) || current_char == b'\n' {
                 space_skipping = true;
             }
             if space_skipping && Self::word_delimeter(current_char) == false {
@@ -287,6 +297,9 @@ impl EditboxState {
     pub fn delete_current_character(&mut self, text: &mut String) {
         if self.cursor > 0 {
             self.cursor -= 1;
+            while !text.is_char_boundary(self.cursor as usize) {
+                self.cursor -= 1;
+            }
             self.delete_next_character(text);
         }
     }
@@ -311,6 +324,13 @@ impl EditboxState {
             end_cursor = (self.cursor as i32 + dx) as u32;
             self.cursor = end_cursor;
         }
+        // don't stop in the middle of the character
+        if dx != 0 {
+            while !text.is_char_boundary(self.cursor as usize) {
+                end_cursor = (self.cursor as i32 + dx.signum()) as u32;
+                self.cursor = end_cursor;
+            }
+        }
 
         if shift == false {
             self.selection = None;
@@ -329,9 +349,7 @@ impl EditboxState {
         assert!(dx >= 0, "not implemented");
 
         for _ in 0..dx {
-            if text.chars().nth(self.cursor as usize).unwrap_or('x') == '\n'
-                || self.cursor == text.len() as u32
-            {
+            if self.cursor >= text.len() as u32 || text.as_bytes()[self.cursor as usize] == b'\n' {
                 break;
             }
             self.move_cursor(text, 1, shift);
