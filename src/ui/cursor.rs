@@ -80,44 +80,54 @@ impl Cursor {
     }
 
     pub fn fit(&mut self, size: Vector2, mut layout: Layout) -> Vector2 {
-        let res;
-
-	if self.next_same_line {
-	    self.next_same_line = false;
-	    layout = Layout::Horizontal;
-	}
+        let result;
+    
+        if self.next_same_line {
+            self.next_same_line = false;
+            layout = Layout::Horizontal;
+        }
+        
         match layout {
             Layout::Horizontal => {
-		self.max_row_y = self.max_row_y.max(size.y);
-
-                if self.x + size.x < self.area.w as f32 - self.margin * 2. {
-                    res = Vector2::new(self.x, self.y);
+                self.max_row_y = self.max_row_y.max(size.y);
+    
+                // does the requested size fit into the remaining horizontal area
+                if self.x + size.x < self.area.w - self.margin * 2. {
+                    result = Vector2::new(self.x, self.y);
                 } else {
+                    // If not, then set self.x to the beginning (left),
+                    // and self.y to the 'next line' (down)
                     self.x = self.margin;
                     self.y += self.max_row_y + self.margin;
-		    self.max_row_y = 0.;
-                    res = Vector2::new(self.x, self.y);
+                    self.max_row_y = 0.;
+                    result = Vector2::new(self.x, self.y);
                 }
+    
                 self.x += size.x + self.margin;
             }
             Layout::Vertical => {
-		if self.x != self.margin {
-		    self.x = self.margin;
-		    self.y += self.max_row_y;
-		}
-                res = Vector2::new(self.x, self.y);
-		self.x += size.x + self.margin;
+                // if the cursor is not already on the beginning of the line,
+                // jump to the 'next line' (down, and left)
+                if self.x != self.margin {
+                    self.x = self.margin;
+                    self.y += self.max_row_y;
+                }
+                result = Vector2::new(self.x, self.y);
+                self.x += size.x + self.margin;
                 self.max_row_y = size.y + self.margin;
             }
             Layout::Free(point) => {
-                res = point;
+                result = point;
             }
         }
+    
         self.scroll.inner_rect = self
             .scroll
             .inner_rect
-            .combine_with(Rect::new(res.x, res.y, size.x, size.y));
-        res + Vector2::new(self.area.x as f32, self.area.y as f32)
+            .combine_with(Rect::new(result.x, result.y, size.x, size.y));
+    
+        result
+            + Vector2::new(self.area.x, self.area.y)
             + self.scroll.scroll
             + Vector2::new(self.ident, 0.)
     }
