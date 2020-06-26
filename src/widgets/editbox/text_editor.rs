@@ -187,14 +187,12 @@ impl EditboxState {
         }
     }
     pub fn find_line_begin(&self, text: &str) -> u32 {
-        let mut line_position = 0;
         let mut cursor_tmp = self.cursor.min(text.len().max(1) as u32 - 1 );
 
         while cursor_tmp > 0 && text.as_bytes()[cursor_tmp as usize] != b'\n' {
             cursor_tmp -= 1;
-            line_position += 1;
         }
-        line_position
+        self.cursor - cursor_tmp
     }
 
     pub fn find_line_end(&self, text: &str) -> u32 {
