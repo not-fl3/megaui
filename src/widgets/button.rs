@@ -6,6 +6,7 @@ pub struct Button<'a> {
     position: Option<Vector2>,
     size: Option<Vector2>,
     label: Cow<'a, str>,
+    layout: Layout,
 }
 
 impl<'a> Button<'a> {
@@ -17,6 +18,7 @@ impl<'a> Button<'a> {
             position: None,
             size: None,
             label: label.into(),
+            layout: Layout::Vertical,
         }
     }
 
@@ -33,6 +35,10 @@ impl<'a> Button<'a> {
         }
     }
 
+    pub fn layout(self, layout: Layout) -> Self {
+        Self { layout, ..self }
+    }
+
     pub fn ui(self, ui: &mut Ui) -> bool {
         let context = ui.get_active_window_context();
 
@@ -47,7 +53,7 @@ impl<'a> Button<'a> {
         let pos = context
             .window
             .cursor
-            .fit(size, self.position.map_or(Layout::Vertical, Layout::Free));
+            .fit(size, self.position.map_or(self.layout, Layout::Free));
         let rect = Rect::new(pos.x, pos.y, size.x as f32, size.y as f32);
         let hovered = rect.contains(context.input.mouse_position);
 
