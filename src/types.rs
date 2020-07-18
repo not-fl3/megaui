@@ -36,6 +36,16 @@ impl std::ops::Sub for Vector2 {
     }
 }
 
+impl From<(f32, f32)> for Vector2 {
+    fn from(tuple: (f32, f32)) -> Self {
+        let (x, y) = tuple;
+        Vector2 {
+            x: x,
+            y: y,
+        }
+    }
+}
+
 /// A simple 2D rectangle.
 ///
 /// The origin of the rectangle is at the top-left,
