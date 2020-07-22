@@ -343,7 +343,7 @@ impl<'a> Editbox<'a> {
         let pos = context
             .window
             .cursor
-            .fit(size, Layout::Free((5., 5.).into()));
+            .fit(size, Layout::Free(Vector2::new(5., 5.)));
 
         context.window.draw_commands.clip(parent_rect);
 
