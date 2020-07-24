@@ -19,6 +19,7 @@ mod text_editor;
 use text_editor::EditboxState;
 
 const LEFT_MARGIN: f32 = 2.;
+const N_SPACES_IN_TAB: usize = 4;
 
 impl<'a> Editbox<'a> {
     pub fn new(id: Id, size: Vector2) -> Editbox<'a> {
@@ -145,6 +146,32 @@ impl<'a> Editbox<'a> {
                     }
                 }
                 InputCharacter {
+                    key: Key::KeyCode(Tab),
+                    modifier_shift: false,
+                    ..
+                } => {
+                    state.insert_string(text, " ".repeat(N_SPACES_IN_TAB));
+                }
+                InputCharacter {
+                    key: Key::KeyCode(Tab),
+                    modifier_shift: true,
+                    ..
+                } => {
+                    for _ in 0..N_SPACES_IN_TAB {
+                        let cursor = state.cursor as usize;
+                        if cursor != 0  {
+                            let current_char = text.chars().nth(cursor - 1).unwrap();
+                            if current_char == ' ' {
+                                state.delete_current_character(text);
+                            } else {
+                                return
+                            }
+                        } else {
+                            return
+                        }
+                    }
+                }
+                InputCharacter {
                     key: Key::KeyCode(Backspace),
                     ..
                 } => {
@@ -235,7 +262,7 @@ impl<'a> Editbox<'a> {
         }
     }
 
-    pub fn ui(self, ui: &mut Ui, text: &mut String) {
+    pub fn ui(self, ui: &mut Ui, text: &mut String) -> bool {
         // TODO: change API to accept real time
         let time = ui.frame as f32 / 60.;
 
@@ -279,7 +306,9 @@ impl<'a> Editbox<'a> {
             state.clicks_counter = 0;
         }
 
+        let mut edited = false;
         if context.focused && input_focused {
+            edited = context.input.input_buffer.len() != 0;
             self.apply_keyboard_input(
                 &mut context.input.input_buffer,
                 &mut *context.clipboard,
@@ -405,11 +434,13 @@ impl<'a> Editbox<'a> {
         context.window.draw_commands.clip(None);
 
         ui.end_window();
+
+        edited
     }
 }
 
 impl Ui {
-    pub fn editbox(&mut self, id: Id, size: Vector2, text: &mut String) {
+    pub fn editbox(&mut self, id: Id, size: Vector2, text: &mut String) -> bool {
         Editbox::new(id, size).ui(self, text)
     }
 }

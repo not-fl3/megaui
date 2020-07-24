@@ -7,6 +7,7 @@ pub enum KeyCode {
     Backspace,
     Delete,
     Enter,
+    Tab,
     Home,
     End,
     A, // select all
