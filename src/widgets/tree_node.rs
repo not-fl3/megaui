@@ -28,7 +28,7 @@ impl<'a> TreeNode<'a> {
 	self
     }
 
-    pub fn ui<F: FnOnce(&mut Ui)>(self, ui: &mut Ui, f: F) {
+    pub fn ui<F: FnOnce(&mut Ui)>(self, ui: &mut Ui, f: F) -> bool {
         let context = ui.get_active_window_context();
 
         let size = Vector2::new(300., 14.);
@@ -67,11 +67,13 @@ impl<'a> TreeNode<'a> {
             let context = ui.get_active_window_context();
             context.window.cursor.ident -= 5.;
         }
+
+        clicked
     }
 }
 
 impl Ui {
-    pub fn tree_node<F: FnOnce(&mut Ui)>(&mut self, id: Id, label: &str, f: F) {
+    pub fn tree_node<F: FnOnce(&mut Ui)>(&mut self, id: Id, label: &str, f: F) -> bool {
         TreeNode::new(id, label).ui(self, f)
     }
 }
