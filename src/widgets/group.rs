@@ -52,6 +52,12 @@ impl Group {
     }
 
     pub fn ui<F: FnOnce(&mut Ui)>(self, ui: &mut Ui, f: F) -> Drag {
+        let token = self.begin(ui);
+        f(ui);
+        token.end(ui)
+    }
+
+    pub fn begin(self, ui: &mut Ui) -> GroupToken {
         let mut drag = Drag::No;
 
         let parent = ui.get_active_window_context();
@@ -119,17 +125,34 @@ impl Group {
             None,
         );
 
-        f(ui);
+        GroupToken {
+            draggable: self.draggable,
+            drag,
+            pos,
+            size: self.size,
+        }
+    }
+}
 
+#[must_use = "Must call `.end()` to finish Group"]
+pub struct GroupToken {
+    draggable: bool,
+    drag: Drag,
+    pos: Vector2,
+    size: Vector2,
+}
+
+impl GroupToken {
+    pub fn end(self, ui: &mut Ui) -> Drag {
         let context = ui.get_active_window_context();
 
         context.window.draw_commands.clip(None);
 
         if context.focused && self.draggable {
             if
-            //parent.dragging.is_none()
-            context.input.is_mouse_down
-                && Rect::new(pos.x, pos.y, self.size.x, self.size.y)
+                //parent.dragging.is_none()
+                context.input.is_mouse_down
+                    && Rect::new(self.pos.x, self.pos.y, self.size.x, self.size.y)
                     .contains(context.input.mouse_position)
             {
                 // *context.dragging = Some((
@@ -141,7 +164,7 @@ impl Group {
 
         ui.end_window();
 
-        drag
+        self.drag
     }
 }
 
