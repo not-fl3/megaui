@@ -66,6 +66,12 @@ impl Window {
     }
 
     pub fn ui<F: FnOnce(&mut Ui)>(self, ui: &mut Ui, f: F) -> bool {
+        let token = self.begin(ui);
+        f(ui);
+        token.end(ui)
+    }
+
+    pub fn begin(self, ui: &mut Ui) -> WindowToken {
         let title_height = if self.titlebar {
             ui.style.title_height
         } else {
@@ -89,16 +95,8 @@ impl Window {
         context.scroll_area();
 
         context.window.draw_commands.clip(clip_rect);
-        f(ui);
 
-        let context = ui.get_active_window_context();
-        context.window.draw_commands.clip(None);
-
-        let opened = context.window.want_close == false;
-
-        ui.end_window();
-
-        opened
+        WindowToken
     }
 
     fn draw_close_button(&self, context: &mut WindowContext) -> bool {
@@ -147,6 +145,22 @@ impl Window {
                 style.window_border(focused),
             );
         }
+    }
+}
+
+#[must_use = "Must call `.end()` to finish Window"]
+pub struct WindowToken;
+
+impl WindowToken {
+    pub fn end(self, ui: &mut Ui) -> bool {
+        let context = ui.get_active_window_context();
+        context.window.draw_commands.clip(None);
+
+        let opened = context.window.want_close == false;
+
+        ui.end_window();
+
+        opened
     }
 }
 

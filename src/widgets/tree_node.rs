@@ -29,6 +29,15 @@ impl<'a> TreeNode<'a> {
     }
 
     pub fn ui<F: FnOnce(&mut Ui)>(self, ui: &mut Ui, f: F) -> bool {
+        if let Some(token) = self.begin(ui) {
+            f(ui);
+            token.end(ui)
+        } else {
+            false
+        }
+    }
+
+    pub fn begin(self, ui: &mut Ui) -> Option<TreeNodeToken> {
         let context = ui.get_active_window_context();
 
         let size = Vector2::new(300., 14.);
@@ -62,13 +71,26 @@ impl<'a> TreeNode<'a> {
         if *opened == 1 {
             context.window.cursor.ident += 5.;
 
-            f(ui);
-
-            let context = ui.get_active_window_context();
-            context.window.cursor.ident -= 5.;
+            Some(TreeNodeToken {
+                clicked,
+            })
+        } else {
+            None
         }
+    }
+}
 
-        clicked
+#[must_use = "Must call `.end()` to finish TreeNode"]
+pub struct TreeNodeToken {
+    clicked: bool,
+}
+
+impl TreeNodeToken {
+    pub fn end(self, ui: &mut Ui) -> bool {
+        let context = ui.get_active_window_context();
+        context.window.cursor.ident -= 5.;
+
+        self.clicked
     }
 }
 
