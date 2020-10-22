@@ -1,22 +1,23 @@
 use crate::{
-    types::{Rect, Vector2},
+    types::Rect,
     ui::{Drag, DragState},
     Id, Layout, Ui,
 };
+use glam::Vec2;
 
 #[derive(Debug, Clone)]
 pub struct Group {
     id: Id,
-    position: Option<Vector2>,
+    position: Option<Vec2>,
     layout: Layout,
-    size: Vector2,
+    size: Vec2,
     draggable: bool,
     highlight: bool,
     hoverable: bool,
 }
 
 impl Group {
-    pub fn new(id: Id, size: Vector2) -> Group {
+    pub fn new(id: Id, size: Vec2) -> Group {
         Group {
             id,
             size,
@@ -28,7 +29,7 @@ impl Group {
         }
     }
 
-    pub fn position(self, position: Vector2) -> Group {
+    pub fn position(self, position: Vec2) -> Group {
         Group {
             position: Some(position),
             ..self
@@ -70,7 +71,7 @@ impl Group {
             self.size,
             self.position.map_or(self.layout, Layout::Free),
         );
-        let rect = Rect::new(pos.x, pos.y, self.size.x, self.size.y);
+        let rect = Rect::new(pos, self.size);
         let parent_id = Some(parent.window.id);
 
         let mut context = ui.begin_window(self.id, parent_id, pos, self.size, 0., true);
@@ -85,7 +86,7 @@ impl Group {
         if let Some((id, DragState::Clicked(orig))) = context.dragging {
             if *id == self.id
                 && context.input.is_mouse_down
-                && context.input.mouse_position.distance(*orig) > 5.
+                && (context.input.mouse_position - *orig).length() > 5.
             {
                 *context.dragging = Some((self.id, DragState::Dragging(*orig)));
             }
@@ -138,8 +139,8 @@ impl Group {
 pub struct GroupToken {
     draggable: bool,
     drag: Drag,
-    pos: Vector2,
-    size: Vector2,
+    pos: Vec2,
+    size: Vec2,
 }
 
 impl GroupToken {
@@ -152,12 +153,11 @@ impl GroupToken {
             if
                 //parent.dragging.is_none()
                 context.input.is_mouse_down
-                    && Rect::new(self.pos.x, self.pos.y, self.size.x, self.size.y)
-                    .contains(context.input.mouse_position)
+                    && Rect::new(self.pos, self.size).contains(context.input.mouse_position)
             {
                 // *context.dragging = Some((
                 //     id,
-                //     DragState::Clicked(context.input.mouse_position, Vector2::new(rect.x, rect.y)),
+                //     DragState::Clicked(context.input.mouse_position, Vec2::new(rect.x, rect.y)),
                 // ));
             }
         }
@@ -169,7 +169,7 @@ impl GroupToken {
 }
 
 impl Ui {
-    pub fn group<F: FnOnce(&mut Ui)>(&mut self, id: Id, size: Vector2, f: F) -> Drag {
+    pub fn group<F: FnOnce(&mut Ui)>(&mut self, id: Id, size: Vec2, f: F) -> Drag {
         Group::new(id, size).ui(self, f)
     }
 }

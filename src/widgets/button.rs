@@ -1,10 +1,11 @@
-use crate::{types::Vector2, Layout, Rect, Ui};
+use crate::{Layout, Rect, Ui};
+use glam::Vec2;
 
 use std::borrow::Cow;
 
 pub struct Button<'a> {
-    position: Option<Vector2>,
-    size: Option<Vector2>,
+    position: Option<Vec2>,
+    size: Option<Vec2>,
     label: Cow<'a, str>,
 }
 
@@ -20,13 +21,13 @@ impl<'a> Button<'a> {
         }
     }
 
-    pub fn position<P: Into<Option<Vector2>>>(self, position: P) -> Self {
+    pub fn position<P: Into<Option<Vec2>>>(self, position: P) -> Self {
         let position = position.into();
 
         Button { position, ..self }
     }
 
-    pub fn size(self, size: Vector2) -> Self {
+    pub fn size(self, size: Vec2) -> Self {
         Button {
             size: Some(size),
             ..self
@@ -38,17 +39,14 @@ impl<'a> Button<'a> {
 
         let size = self.size.unwrap_or_else(|| {
             context.window.draw_commands.label_size(&self.label, None)
-                + Vector2::new(
-                    context.global_style.margin_button * 2.,
-                    context.global_style.margin_button,
-                )
+                + Vec2::new(2.0, 1.0) * context.global_style.margin_button
         });
 
         let pos = context
             .window
             .cursor
             .fit(size, self.position.map_or(Layout::Vertical, Layout::Free));
-        let rect = Rect::new(pos.x, pos.y, size.x as f32, size.y as f32);
+        let rect = Rect::new(pos, size);
         let hovered = rect.contains(context.input.mouse_position);
 
         context.window.draw_commands.draw_rect(
@@ -62,10 +60,7 @@ impl<'a> Button<'a> {
         );
         context.window.draw_commands.draw_label(
             &self.label,
-            pos + Vector2::new(
-                context.global_style.margin_button,
-                context.global_style.margin_button,
-            ),
+            pos + Vec2::one() * context.global_style.margin_button,
             Some(context.global_style.text(context.focused)),
         );
 
@@ -74,7 +69,7 @@ impl<'a> Button<'a> {
 }
 
 impl Ui {
-    pub fn button<P: Into<Option<Vector2>>>(&mut self, position: P, label: &str) -> bool {
+    pub fn button<P: Into<Option<Vec2>>>(&mut self, position: P, label: &str) -> bool {
         Button::new(label).position(position).ui(self)
     }
 }

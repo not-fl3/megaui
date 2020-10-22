@@ -1,14 +1,15 @@
-use crate::types::{Rect, Vector2};
+use crate::types::Rect;
+use glam::Vec2;
 
 #[derive(Clone, Debug)]
 pub struct Scroll {
-    pub scroll: Vector2,
+    pub scroll: Vec2,
     pub dragging_x: bool,
     pub dragging_y: bool,
     pub rect: Rect,
     pub inner_rect: Rect,
     pub inner_rect_previous_frame: Rect,
-    pub initial_scroll: Vector2,
+    pub initial_scroll: Vec2,
 }
 impl Scroll {
     pub fn scroll_to(&mut self, y: f32) {
@@ -29,7 +30,7 @@ impl Scroll {
 pub enum Layout {
     Vertical,
     Horizontal,
-    Free(Vector2),
+    Free(Vec2),
 }
 
 #[derive(Debug)]
@@ -47,7 +48,8 @@ pub struct Cursor {
 }
 
 impl Cursor {
-    pub fn new(area: Rect, margin: f32) -> Cursor {
+    pub fn new(rect: Rect, margin: f32) -> Cursor {
+        let area = rect.area();
         Cursor {
             margin,
             x: margin,
@@ -56,18 +58,22 @@ impl Cursor {
             start_x: margin,
             start_y: margin,
             scroll: Scroll {
-                rect: Rect::new(0., 0., area.w, area.h),
-                inner_rect: Rect::new(0., 0., area.w, area.h),
-                inner_rect_previous_frame: Rect::new(0., 0., area.w, area.h),
-                scroll: Vector2::new(0., 0.),
+                rect: Rect::new(Vec2::zero(), area),
+                inner_rect: Rect::new(Vec2::zero(), area),
+                inner_rect_previous_frame: Rect::new(Vec2::zero(), area),
+                scroll: Vec2::zero(),
                 dragging_x: false,
                 dragging_y: false,
-                initial_scroll: Vector2::new(0., 0.),
+                initial_scroll: Vec2::zero(),
             },
-            area,
+            area: rect,
 	    next_same_line: None,
 	    max_row_y: 0.
         }
+    }
+
+    pub fn pos(&self) -> Vec2 {
+        Vec2::new(self.x, self.y)
     }
 
     pub fn reset(&mut self) {
@@ -76,10 +82,10 @@ impl Cursor {
 	self.max_row_y = 0.;
         self.ident = 0.;
         self.scroll.inner_rect_previous_frame = self.scroll.inner_rect;
-        self.scroll.inner_rect = Rect::new(0., 0., self.area.w, self.area.h);
+        self.scroll.inner_rect = Rect::new(Vec2::zero(), self.area.area());
     }
 
-    pub fn fit(&mut self, size: Vector2, mut layout: Layout) -> Vector2 {
+    pub fn fit(&mut self, size: Vec2, mut layout: Layout) -> Vec2 {
         let res;
 
 	if let Some(x) = self.next_same_line {
@@ -91,26 +97,26 @@ impl Cursor {
 	}
         match layout {
             Layout::Horizontal => {
-		self.max_row_y = self.max_row_y.max(size.y);
+		self.max_row_y = self.max_row_y.max(size.y());
 
-                if self.x + size.x < self.area.w as f32 - self.margin * 2. {
-                    res = Vector2::new(self.x, self.y);
+                if self.x + size.x() < self.area.w as f32 - self.margin * 2. {
+                    res = Vec2::new(self.x, self.y);
                 } else {
                     self.x = self.margin;
                     self.y += self.max_row_y + self.margin;
 		    self.max_row_y = 0.;
-                    res = Vector2::new(self.x, self.y);
+                    res = Vec2::new(self.x, self.y);
                 }
-                self.x += size.x + self.margin;
+                self.x += size.x() + self.margin;
             }
             Layout::Vertical => {
 		if self.x != self.margin {
 		    self.x = self.margin;
 		    self.y += self.max_row_y;
 		}
-                res = Vector2::new(self.x, self.y);
-		self.x += size.x + self.margin;
-                self.max_row_y = size.y + self.margin;
+                res = Vec2::new(self.x, self.y);
+		self.x += size.x() + self.margin;
+                self.max_row_y = size.y() + self.margin;
             }
             Layout::Free(point) => {
                 res = point;
@@ -119,9 +125,9 @@ impl Cursor {
         self.scroll.inner_rect = self
             .scroll
             .inner_rect
-            .combine_with(Rect::new(res.x, res.y, size.x, size.y));
-        res + Vector2::new(self.area.x as f32, self.area.y as f32)
+            .combine_with(Rect::new(res, size));
+        res + self.area.area()
             + self.scroll.scroll
-            + Vector2::new(self.ident, 0.)
+            + Vec2::new(self.ident, 0.)
     }
 }
