@@ -1,29 +1,29 @@
 use crate::{
-    types::{Vector2, Rect, Color},
-	hash,
+    hash,
+    types::{Color, Rect, Vector2},
     widgets::Editbox,
     Id, Layout, Ui,
 };
 
 #[derive(Default)]
 struct State {
-	string_represents: f32,
-	string: String,
-	before: String,
-	drag: Option<Drag>,
+    string_represents: f32,
+    string: String,
+    before: String,
+    drag: Option<Drag>,
 }
 
 #[derive(Clone, Copy)]
 struct Drag {
-	start_mouse: Vector2,
-	start_data: f32,
+    start_mouse: Vector2,
+    start_data: f32,
 }
 
 pub struct InputFloat<'a> {
     id: Id,
     label: &'a str,
     size: Option<Vector2>,
-	step: f32,
+    step: f32,
 }
 
 impl<'a> InputFloat<'a> {
@@ -32,7 +32,7 @@ impl<'a> InputFloat<'a> {
             id,
             size: None,
             label: "",
-			step: 0.1,
+            step: 0.1,
         }
     }
 
@@ -52,23 +52,16 @@ impl<'a> InputFloat<'a> {
         }
     }
 
-	/// Ratio of pixels on the x-axis dragged to how much the value should be changed.
-	/// Default is `0.1`.
+    /// Ratio of pixels on the x-axis dragged to how much the value should be changed.
+    /// Default is `0.1`.
     pub fn step(self, step: f32) -> Self {
-        Self {
-            step,
-            ..self
-        }
+        Self { step, ..self }
     }
 
     pub fn ui(self, ui: &mut Ui, data: &mut f32) {
         let context = ui.get_active_window_context();
-		let state_hash = hash!(self.id, "input_float_state");
-        let mut s: State = std::mem::take(
-			context
-				.storage_any
-				.get_or_default(state_hash)
-		);
+        let state_hash = hash!(self.id, "input_float_state");
+        let mut s: State = std::mem::take(context.storage_any.get_or_default(state_hash));
 
         let size = self.size.unwrap_or_else(|| {
             Vector2::new(
@@ -81,11 +74,15 @@ impl<'a> InputFloat<'a> {
         let pos = context.window.cursor.fit(size, Layout::Vertical);
 
         let editbox_area = Vector2::new(
-			if self.label.is_empty() { size.x } else { size.x / 2.0 },
-			size.y,
-		);
+            if self.label.is_empty() {
+                size.x
+            } else {
+                size.x / 2.0
+            },
+            size.y,
+        );
 
-        let editbox = Editbox::new(self.id, editbox_area)
+        let mut editbox = Editbox::new(self.id, editbox_area)
             .position(pos)
             .multiline(false);
 
@@ -108,11 +105,7 @@ impl<'a> InputFloat<'a> {
                 if !hovered {
                     context.window.input_focus = None;
                 } else {
-                    use super::editbox::EditboxState;
-                    context
-                        .storage_any
-                        .get_or_default::<EditboxState>(hash!(self.id, "cursor"))
-                        .select_all(&mut s.string)
+					editbox = editbox.select_all();
                 }
             }
 
@@ -120,13 +113,14 @@ impl<'a> InputFloat<'a> {
             *data = drag.start_data + mouse_delta * self.step;
         }
 
-		if s.string_represents != *data {
-			s.string = data.to_string();
-		}
+        if s.string_represents != *data {
+            s.string = data.to_string();
+        }
 
         editbox.ui(ui, &mut s.string);
 
-        if let Ok(n) = s.string
+        if let Ok(n) = s
+            .string
             .parse()
             .or_else(|e| if s.string.is_empty() { Ok(0.0) } else { Err(e) })
         {
