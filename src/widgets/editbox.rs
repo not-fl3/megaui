@@ -263,8 +263,7 @@ impl<'a> Editbox<'a> {
     }
 
     pub fn ui(self, ui: &mut Ui, text: &mut String) -> bool {
-        // TODO: change API to accept real time
-        let time = ui.frame as f32 / 60.;
+        let time = ui.time;
 
         let context = ui.get_active_window_context();
 

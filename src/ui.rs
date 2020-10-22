@@ -8,6 +8,8 @@ use std::{collections::HashMap, rc::Rc};
 
 mod cursor;
 mod input;
+mod key_repeat;
+
 use cursor::Cursor;
 use input::Input;
 
@@ -133,6 +135,7 @@ pub struct Ui {
     input: Input,
     pub(crate) style: Style,
     pub(crate) frame: u64,
+    pub(crate) time: f32,
 
     moving: Option<(Id, Vector2)>,
     windows: HashMap<Id, Window>,
@@ -154,6 +157,8 @@ pub struct Ui {
 
     clipboard_selection: String,
     clipboard: Box<dyn crate::ClipboardObject>,
+
+    key_repeat: key_repeat::KeyRepeat
 }
 
 #[derive(Default)]
@@ -359,11 +364,14 @@ impl InputHandler for Ui {
         if ctrl && (key == KeyCode::C || key == KeyCode::X) {
             self.clipboard.set(&self.clipboard_selection);
         }
-        self.input.input_buffer.push(input::InputCharacter {
-            key: input::Key::KeyCode(key),
-            modifier_shift: shift,
-            modifier_ctrl: ctrl,
-        });
+
+        if self.key_repeat.add_repeat_gap(key, self.time) {
+            self.input.input_buffer.push(input::InputCharacter {
+                key: input::Key::KeyCode(key),
+                modifier_shift: shift,
+                modifier_ctrl: ctrl,
+            });
+        }
     }
 }
 
@@ -403,6 +411,8 @@ impl Ui {
             font_atlas: Rc::new(font_atlas),
             clipboard_selection: String::new(),
             clipboard: Box::new(crate::LocalClipboard::new()),
+            time: 0.0,
+            key_repeat: key_repeat::KeyRepeat::new()
         }
     }
 
@@ -591,12 +601,14 @@ impl Ui {
         return false;
     }
 
-    pub fn new_frame(&mut self) {
+    pub fn new_frame(&mut self, delta: f32) {
         self.frame += 1;
+        self.time += delta;
 
         self.drag_hovered_previous_frame = self.drag_hovered;
         self.drag_hovered = None;
         self.input.reset();
+        self.key_repeat.new_frame(self.time);
 
         for (_, window) in &mut self.windows {
             window.draw_commands.clear();
