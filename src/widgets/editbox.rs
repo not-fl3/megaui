@@ -9,6 +9,7 @@ pub struct Editbox<'a> {
     id: Id,
     size: Vector2,
     multiline: bool,
+    select_all: bool,
     filter: Option<&'a dyn Fn(char) -> bool>,
     pos: Option<Vector2>,
     line_height: f32,
@@ -16,7 +17,7 @@ pub struct Editbox<'a> {
 
 mod text_editor;
 
-pub use text_editor::EditboxState;
+use text_editor::EditboxState;
 
 const LEFT_MARGIN: f32 = 2.;
 const N_SPACES_IN_TAB: usize = 4;
@@ -27,6 +28,7 @@ impl<'a> Editbox<'a> {
             id,
             size,
             filter: None,
+            select_all: false,
             multiline: true,
             pos: None,
             line_height: 14.0,
@@ -35,6 +37,10 @@ impl<'a> Editbox<'a> {
 
     pub fn multiline(self, multiline: bool) -> Self {
         Editbox { multiline, ..self }
+    }
+
+    pub fn select_all(self) -> Self {
+        Editbox { select_all: true, ..self }
     }
 
     pub fn position(self, pos: Vector2) -> Self {
@@ -57,6 +63,7 @@ impl<'a> Editbox<'a> {
             line_height: self.line_height,
             pos: self.pos,
             multiline: self.multiline,
+            select_all: self.select_all,
             size: self.size,
             filter: Some(filter),
         }
@@ -285,6 +292,10 @@ impl<'a> Editbox<'a> {
         let mut state = context
             .storage_any
             .get_or_default::<EditboxState>(hash!(self.id, "cursor"));
+
+        if self.select_all {
+            state.select_all(text);
+        }
 
         if let Some(selected) = state.selected_text(text) {
             *context.clipboard_selection = selected.to_owned();
