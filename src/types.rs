@@ -85,8 +85,8 @@ impl Rect {
         Vec2::new(self.x, self.y)
     }
 
-    /// Returns the top-left corner of the `Rect`
-    pub fn area(&self) -> Vec2 {
+    /// Returns a Vec2 containing the width and height of the Rect.
+    pub fn size(&self) -> Vec2 {
         Vec2::new(self.w, self.h)
     }
 
@@ -134,7 +134,7 @@ impl Rect {
     }
 
     pub fn offset(self, offset: Vec2) -> Rect {
-        Rect::new(self.top_left() + offset, self.area())
+        Rect::new(self.top_left() + offset, self.size())
     }
 }
 

@@ -48,8 +48,8 @@ pub struct Cursor {
 }
 
 impl Cursor {
-    pub fn new(rect: Rect, margin: f32) -> Cursor {
-        let area = rect.area();
+    pub fn new(area: Rect, margin: f32) -> Cursor {
+        let size = area.size();
         Cursor {
             margin,
             x: margin,
@@ -58,15 +58,15 @@ impl Cursor {
             start_x: margin,
             start_y: margin,
             scroll: Scroll {
-                rect: Rect::new(Vec2::zero(), area),
-                inner_rect: Rect::new(Vec2::zero(), area),
-                inner_rect_previous_frame: Rect::new(Vec2::zero(), area),
+                rect: Rect::new(Vec2::zero(), size),
+                inner_rect: Rect::new(Vec2::zero(), size),
+                inner_rect_previous_frame: Rect::new(Vec2::zero(), size),
                 scroll: Vec2::zero(),
                 dragging_x: false,
                 dragging_y: false,
                 initial_scroll: Vec2::zero(),
             },
-            area: rect,
+            area,
 	    next_same_line: None,
 	    max_row_y: 0.
         }
@@ -82,7 +82,7 @@ impl Cursor {
 	self.max_row_y = 0.;
         self.ident = 0.;
         self.scroll.inner_rect_previous_frame = self.scroll.inner_rect;
-        self.scroll.inner_rect = Rect::new(Vec2::zero(), self.area.area());
+        self.scroll.inner_rect = Rect::new(Vec2::zero(), self.area.size());
     }
 
     pub fn fit(&mut self, size: Vec2, mut layout: Layout) -> Vec2 {
@@ -126,7 +126,7 @@ impl Cursor {
             .scroll
             .inner_rect
             .combine_with(Rect::new(res, size));
-        res + self.area.area()
+        res + self.area.size()
             + self.scroll.scroll
             + Vec2::new(self.ident, 0.)
     }

@@ -13,7 +13,7 @@ impl<'a> DrawCanvas<'a> {
     pub fn cursor(&self) -> Vec2 {
         let cursor = &self.context.window.cursor;
         cursor.pos()
-            + cursor.area.area()
+            + cursor.area.size()
             + cursor.scroll.scroll
     }
 

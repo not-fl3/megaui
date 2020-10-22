@@ -172,7 +172,7 @@ impl CommandsList {
 
     pub fn draw_label<T: Into<LabelParams>>(&mut self, label: &str, position: Vec2, params: T) {
         if self.clipping_zone.map_or(false, |clip| {
-            !clip.overlaps(&Rect::new(position - Vec2::new(150.0, 25.0), Vec2::new(200., 50.)))
+            !clip.overlaps(&Rect::parts(position.x() - 150.0, position.y() - 25.0, 200., 50.))
         }) {
             return;
         }
