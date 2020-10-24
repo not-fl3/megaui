@@ -4,23 +4,23 @@ use crate::{
     Id, Layout, Ui,
 };
 
-pub struct InputString<'a> {
+pub struct InputText<'a> {
     id: Id,
     label: &'a str,
     size: Option<Vector2>,
 }
 
-impl<'a> InputString<'a> {
-    pub fn new(id: Id) -> InputString<'a> {
-        InputString {
+impl<'a> InputText<'a> {
+    pub fn new(id: Id) -> InputText<'a> {
+        InputText {
             id,
             size: None,
             label: "",
         }
     }
 
-    pub fn label<'b>(self, label: &'b str) -> InputString<'b> {
-        InputString {
+    pub fn label<'b>(self, label: &'b str) -> InputText<'b> {
+        InputText {
             id: self.id,
             size: self.size,
             label,
@@ -70,7 +70,7 @@ impl<'a> InputString<'a> {
 }
 
 impl Ui {
-    pub fn input_string(&mut self, id: Id, label: &str, data: &mut String) {
-        InputString::new(id).label(label).ui(self, data)
+    pub fn input_text(&mut self, id: Id, label: &str, data: &mut String) {
+        InputText::new(id).label(label).ui(self, data)
     }
 }

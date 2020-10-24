@@ -4,40 +4,51 @@ use crate::{
     widgets::Editbox,
     Id, Layout, Ui,
 };
+use std::num::NonZeroUsize;
 
-#[derive(Default)]
-struct State {
-    string_represents: f32,
+struct State<T: MegaNum> {
+    string_represents: T,
     string: String,
     before: String,
-    drag: Option<Drag>,
+    drag: Option<Drag<T>>,
+}
+
+impl<T: MegaNum> Default for State<T> {
+	fn default() -> Self {
+		Self {
+			string_represents: T::empty(),
+			string: String::new(),
+			before: String::new(),
+			drag: None,
+		}
+	}
 }
 
 #[derive(Clone, Copy)]
-struct Drag {
+struct Drag<T> {
     start_mouse: Vector2,
-    start_data: f32,
+    start_data: T,
 }
 
-pub struct InputFloat<'a> {
+pub struct InputNum<'a, T: MegaNum> {
     id: Id,
     label: &'a str,
     size: Option<Vector2>,
-    step: f32,
+    step: T,
 }
 
-impl<'a> InputFloat<'a> {
-    pub fn new(id: Id) -> InputFloat<'a> {
-        InputFloat {
+impl<'a, T: MegaNum + 'static> InputNum<'a, T> {
+    pub fn new(id: Id) -> InputNum<'a, T> {
+        InputNum {
             id,
             size: None,
             label: "",
-            step: 0.1,
+            step: T::default_step(),
         }
     }
 
-    pub fn label<'b>(self, label: &'b str) -> InputFloat<'b> {
-        InputFloat {
+    pub fn label<'b>(self, label: &'b str) -> InputNum<'b, T> {
+        InputNum {
             label,
             id: self.id,
             size: self.size,
@@ -53,15 +64,15 @@ impl<'a> InputFloat<'a> {
     }
 
     /// Ratio of pixels on the x-axis dragged to how much the value should be changed.
-    /// Default is `0.1`.
-    pub fn step(self, step: f32) -> Self {
+    /// Default for floating point numbers is `0.1`, for integers it's `1`.
+    pub fn step(self, step: T) -> Self {
         Self { step, ..self }
     }
 
-    pub fn ui(self, ui: &mut Ui, data: &mut f32) {
+    pub fn ui(self, ui: &mut Ui, data: &mut T) {
         let context = ui.get_active_window_context();
         let state_hash = hash!(self.id, "input_float_state");
-        let mut s: State = std::mem::take(context.storage_any.get_or_default(state_hash));
+        let mut s: State<T> = std::mem::take(context.storage_any.get_or_default(state_hash));
 
         let size = self.size.unwrap_or_else(|| {
             Vector2::new(
@@ -110,7 +121,7 @@ impl<'a> InputFloat<'a> {
             }
 
             let mouse_delta = context.input.mouse_position.x - drag.start_mouse.x;
-            *data = drag.start_data + mouse_delta * self.step;
+            *data = T::drag(drag.start_data, mouse_delta, self.step);
         }
 
         if s.string_represents != *data {
@@ -122,7 +133,7 @@ impl<'a> InputFloat<'a> {
         if let Ok(n) = s
             .string
             .parse()
-            .or_else(|e| if s.string.is_empty() { Ok(0.0) } else { Err(e) })
+            .or_else(|e| if s.string.is_empty() { Ok(T::empty()) } else { Err(e) })
         {
             *data = n;
             s.string_represents = n;
@@ -145,8 +156,75 @@ impl<'a> InputFloat<'a> {
     }
 }
 
+pub trait MegaNum: ToString + std::str::FromStr + PartialEq + Copy {
+	fn default_step() -> Self;
+	fn empty() -> Self;
+	fn drag(start: Self, mouse_delta: f32, step: Self) -> Self;
+}
+
+macro_rules! mega_num_impls {
+	( $($t:ident, $default_step:literal, $empty:literal ; )* ) => {$(
+		impl MegaNum for $t {
+			fn default_step() -> $t { $default_step }
+			fn empty() -> $t { $empty }
+			fn drag(start: $t, mouse_delta: f32, step: $t) -> $t {
+				start + mouse_delta as $t * step
+			}
+		}
+	)*}
+}
+
+mega_num_impls! {
+	f32, 0.1, 0.0;
+	f64, 0.1, 0.0;
+	usize, 1, 0;
+	u8, 1, 0;
+	u16, 1, 0;
+	u32, 1, 0;
+	u64, 1, 0;
+	u128, 1, 0;
+	isize, 1, 0;
+	i8, 1, 0;
+	i16, 1, 0;
+	i32, 1, 0;
+	i64, 1, 0;
+	i128, 1, 0;
+}
+
+mod non_zero {
+	use super::*;
+	use std::num::*;
+
+	macro_rules! mega_num_non_zero_impls {
+		( $($t:ident, $one:ident, $inside:ident;)* ) => {$(
+			const $one: $t = unsafe { $t::new_unchecked(1) };
+			impl MegaNum for $t {
+				fn default_step() -> $t { $one }
+				fn empty() -> $t { $one }
+				fn drag(start: $t, mouse_delta: f32, step: $t) -> $t {
+					$t::new(start.get() + mouse_delta as $inside * step.get()).unwrap_or($one)
+				}
+			}
+		)*}
+	}
+	mega_num_non_zero_impls! {
+		NonZeroUsize, NON_ZERO_USIZE_ONE, usize;
+		NonZeroU8, NON_ZERO_U8_ONE, u8;
+		NonZeroU16, NON_ZERO_U16_ONE, u16;
+		NonZeroU32, NON_ZERO_U32_ONE, u32;
+		NonZeroU64, NON_ZERO_U64_ONE, u64;
+		NonZeroU128, NON_ZERO_U128_ONE, u128;
+		NonZeroIsize, NON_ZERO_ISIZE_ONE, isize;
+		NonZeroI8, NON_ZERO_I8_ONE, i8;
+		NonZeroI16, NON_ZERO_I16_ONE, i16;
+		NonZeroI32, NON_ZERO_I32_ONE, i32;
+		NonZeroI64, NON_ZERO_I64_ONE, i64;
+		NonZeroI128, NON_ZERO_I128_ONE, i128;
+	}
+}
+
 impl Ui {
-    pub fn input_float(&mut self, id: Id, label: &str, data: &mut f32) {
-        InputFloat::new(id).label(label).ui(self, data)
+    pub fn input_num<T: MegaNum + 'static>(&mut self, id: Id, label: &str, data: &mut T) {
+        InputNum::new(id).label(label).ui(self, data)
     }
 }
