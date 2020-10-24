@@ -14,14 +14,14 @@ struct State<T: MegaNum> {
 }
 
 impl<T: MegaNum> Default for State<T> {
-	fn default() -> Self {
-		Self {
-			string_represents: T::empty(),
-			string: String::new(),
-			before: String::new(),
-			drag: None,
-		}
-	}
+    fn default() -> Self {
+        Self {
+            string_represents: T::empty(),
+            string: String::new(),
+            before: String::new(),
+            drag: None,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -116,7 +116,7 @@ impl<'a, T: MegaNum + 'static> InputNum<'a, T> {
                 if !hovered {
                     context.window.input_focus = None;
                 } else {
-					editbox = editbox.select_all();
+                    editbox = editbox.select_all();
                 }
             }
 
@@ -130,11 +130,13 @@ impl<'a, T: MegaNum + 'static> InputNum<'a, T> {
 
         editbox.ui(ui, &mut s.string);
 
-        if let Ok(n) = s
-            .string
-            .parse()
-            .or_else(|e| if s.string.is_empty() { Ok(T::empty()) } else { Err(e) })
-        {
+        if let Ok(n) = s.string.parse().or_else(|e| {
+            if s.string.is_empty() {
+                Ok(T::empty())
+            } else {
+                Err(e)
+            }
+        }) {
             *data = n;
             s.string_represents = n;
             s.before = s.string.clone();
@@ -157,9 +159,9 @@ impl<'a, T: MegaNum + 'static> InputNum<'a, T> {
 }
 
 pub trait MegaNum: ToString + std::str::FromStr + PartialEq + Copy {
-	fn default_step() -> Self;
-	fn empty() -> Self;
-	fn drag(start: Self, mouse_delta: f32, step: Self) -> Self;
+    fn default_step() -> Self;
+    fn empty() -> Self;
+    fn drag(start: Self, mouse_delta: f32, step: Self) -> Self;
 }
 
 macro_rules! mega_num_impls {
@@ -175,27 +177,27 @@ macro_rules! mega_num_impls {
 }
 
 mega_num_impls! {
-	f32, 0.1, 0.0;
-	f64, 0.1, 0.0;
-	usize, 1, 0;
-	u8, 1, 0;
-	u16, 1, 0;
-	u32, 1, 0;
-	u64, 1, 0;
-	u128, 1, 0;
-	isize, 1, 0;
-	i8, 1, 0;
-	i16, 1, 0;
-	i32, 1, 0;
-	i64, 1, 0;
-	i128, 1, 0;
+    f32, 0.1, 0.0;
+    f64, 0.1, 0.0;
+    usize, 1, 0;
+    u8, 1, 0;
+    u16, 1, 0;
+    u32, 1, 0;
+    u64, 1, 0;
+    u128, 1, 0;
+    isize, 1, 0;
+    i8, 1, 0;
+    i16, 1, 0;
+    i32, 1, 0;
+    i64, 1, 0;
+    i128, 1, 0;
 }
 
 mod non_zero {
-	use super::*;
-	use std::num::*;
+    use super::*;
+    use std::num::*;
 
-	macro_rules! mega_num_non_zero_impls {
+    macro_rules! mega_num_non_zero_impls {
 		( $($t:ident, $one:ident, $inside:ident;)* ) => {$(
 			const $one: $t = unsafe { $t::new_unchecked(1) };
 			impl MegaNum for $t {
@@ -207,20 +209,20 @@ mod non_zero {
 			}
 		)*}
 	}
-	mega_num_non_zero_impls! {
-		NonZeroUsize, NON_ZERO_USIZE_ONE, usize;
-		NonZeroU8, NON_ZERO_U8_ONE, u8;
-		NonZeroU16, NON_ZERO_U16_ONE, u16;
-		NonZeroU32, NON_ZERO_U32_ONE, u32;
-		NonZeroU64, NON_ZERO_U64_ONE, u64;
-		NonZeroU128, NON_ZERO_U128_ONE, u128;
-		NonZeroIsize, NON_ZERO_ISIZE_ONE, isize;
-		NonZeroI8, NON_ZERO_I8_ONE, i8;
-		NonZeroI16, NON_ZERO_I16_ONE, i16;
-		NonZeroI32, NON_ZERO_I32_ONE, i32;
-		NonZeroI64, NON_ZERO_I64_ONE, i64;
-		NonZeroI128, NON_ZERO_I128_ONE, i128;
-	}
+    mega_num_non_zero_impls! {
+        NonZeroUsize, NON_ZERO_USIZE_ONE, usize;
+        NonZeroU8, NON_ZERO_U8_ONE, u8;
+        NonZeroU16, NON_ZERO_U16_ONE, u16;
+        NonZeroU32, NON_ZERO_U32_ONE, u32;
+        NonZeroU64, NON_ZERO_U64_ONE, u64;
+        NonZeroU128, NON_ZERO_U128_ONE, u128;
+        NonZeroIsize, NON_ZERO_ISIZE_ONE, isize;
+        NonZeroI8, NON_ZERO_I8_ONE, i8;
+        NonZeroI16, NON_ZERO_I16_ONE, i16;
+        NonZeroI32, NON_ZERO_I32_ONE, i32;
+        NonZeroI64, NON_ZERO_I64_ONE, i64;
+        NonZeroI128, NON_ZERO_I128_ONE, i128;
+    }
 }
 
 impl Ui {
