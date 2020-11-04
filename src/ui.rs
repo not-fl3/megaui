@@ -594,7 +594,7 @@ impl Ui {
         let cursor = &self.get_active_window_context().window.cursor;
         Vector2::new(
             cursor.scroll.inner_rect.w - cursor.area.w,
-            cursor.scroll.inner_rect.w - cursor.area.h,
+            cursor.scroll.inner_rect.h - cursor.area.h,
         )
     }
 
