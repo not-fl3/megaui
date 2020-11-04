@@ -134,7 +134,7 @@ pub enum Drag {
 pub struct Ui {
     input: Input,
     pub(crate) style: Style,
-    pub(crate) frame: u64,
+    pub frame: u64,
     pub(crate) time: f32,
 
     moving: Option<(Id, Vector2)>,
@@ -553,6 +553,44 @@ impl Ui {
             clipboard_selection: &mut self.clipboard_selection,
             clipboard: &mut *self.clipboard,
         }
+    }
+
+    /// Scrolls the middle of the active GUI window to its GUI cursor
+    pub fn scroll_here(&mut self) {
+        self.scroll_here_ratio(0.5)
+    }
+
+    /// Scrolls the active GUI window to its GUI cursor.
+    /// 
+    /// 1.0 puts the bottom of the window at the GUI cursor,
+    /// 0.0 puts the top of the window there.
+    /// 
+    /// 0.5 as the ratio puts the middle of the window at the GUI cursor,
+    /// and is equivalent to `Ui::scroll_here`.
+    pub fn scroll_here_ratio(&mut self, ratio: f32) {
+        let context = self.get_active_window_context();
+        let cursor = &mut context.window.cursor;
+        cursor.scroll.scroll_to(dbg!(cursor.y - cursor.area.h * ratio));
+    }
+
+    /// How far the active gui window has been scrolled down on the y axis.
+    /// 
+    /// Note that for these purposes, a Group widget is still considered a Window
+    /// because it can have its own scrollbar.
+    pub fn scroll(&mut self) -> Vector2 {
+        self.get_active_window_context().window.cursor.scroll.scroll
+    }
+
+    /// The farthest down a scrollbar may go given the constraints of its window.
+    /// 
+    /// Note that for these purposes, a Group widget is still considered a Window
+    /// because it can have its own scrollbar.
+    pub fn scroll_max(&mut self) -> Vector2 {
+        let cursor = &self.get_active_window_context().window.cursor;
+        Vector2::new(
+            cursor.scroll.inner_rect.w - cursor.area.w,
+            cursor.scroll.inner_rect.w - cursor.area.h,
+        )
     }
 
     pub fn set_clipboard_object<T: crate::ClipboardObject + 'static>(&mut self, clipboard: T) {
