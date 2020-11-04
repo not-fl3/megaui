@@ -134,6 +134,7 @@ pub enum Drag {
 pub struct Ui {
     input: Input,
     pub(crate) style: Style,
+    /// Returns the number of frames that have elapsed since the program started.
     pub frame: u64,
     pub(crate) time: f32,
 
@@ -556,6 +557,10 @@ impl Ui {
     }
 
     /// Scrolls the middle of the active GUI window to its GUI cursor
+    /// 
+    /// Note that this does not work on the first frame of the GUI application.
+    /// If you want your widget to start with its scrollbar in a particular location,
+    /// consider `if ui.frame == 1 { ui.scroll_here() }`.
     pub fn scroll_here(&mut self) {
         self.scroll_here_ratio(0.5)
     }
@@ -570,7 +575,7 @@ impl Ui {
     pub fn scroll_here_ratio(&mut self, ratio: f32) {
         let context = self.get_active_window_context();
         let cursor = &mut context.window.cursor;
-        cursor.scroll.scroll_to(dbg!(cursor.y - cursor.area.h * ratio));
+        cursor.scroll.scroll_to(cursor.y - cursor.area.h * ratio);
     }
 
     /// How far the active gui window has been scrolled down on the y axis.
