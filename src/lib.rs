@@ -1,3 +1,10 @@
+///! GUI crate originally intended for use with macroquad.
+///! The API is inspired largely by imgui.
+///! 
+///! Several methods in megaui, such as `Ui::scroll_here`, implicitly rely on the concept of a GUI cursor.
+///! This gui cursor is not to be confused with the mouse cursor.
+///! Instead it describes where the next widget will be placed
+///! if you do not explicitly set its position with Layout::Free.
 mod draw_command;
 mod draw_list;
 mod input_handler;
