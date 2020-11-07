@@ -380,7 +380,7 @@ impl Ui {
     pub fn new() -> Ui {
         let mut font_atlas = FontAtlas::new(
             &include_bytes!("../assets/ProggyClean.ttf")[..],
-            13,
+            20,
             FontAtlas::ascii_character_list(),
         )
         .unwrap();
