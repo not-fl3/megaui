@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use crate::{
     canvas::DrawCanvas, draw_command::CommandsList, draw_list::DrawList, types::Rect,
     types::Vector2, Id, InputHandler, Style,
@@ -47,7 +48,7 @@ impl Window {
         title_height: f32,
         margin: f32,
         movable: bool,
-        font_atlas: Rc<FontAtlas>,
+        font_atlas: Rc<RefCell<FontAtlas>>,
     ) -> Window {
         Window {
             id,
@@ -154,7 +155,7 @@ pub struct Ui {
     active_window: Option<Id>,
     child_window_stack: Vec<Id>,
 
-    pub font_atlas: Rc<FontAtlas>,
+    pub font_atlas: Rc<RefCell<FontAtlas>>,
 
     clipboard_selection: String,
     clipboard: Box<dyn crate::ClipboardObject>,
@@ -384,15 +385,7 @@ impl Ui {
             FontAtlas::ascii_character_list(),
         )
         .unwrap();
-
-        let white_square = [(0, 0), (1, 0), (1, 1), (0, 1)];
-        let w = font_atlas.texture.width;
-        for pixel in white_square.iter() {
-            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 0) as usize] = 255;
-            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 1) as usize] = 255;
-            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 2) as usize] = 255;
-            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 3) as usize] = 255;
-        }
+        Ui::process_font_atlas(&mut font_atlas);
 
         Ui {
             input: Input::default(),
@@ -409,7 +402,7 @@ impl Ui {
             drag_hovered_previous_frame: None,
             storage_u32: HashMap::default(),
             storage_any: AnyStorage::default(),
-            font_atlas: Rc::new(font_atlas),
+            font_atlas: Rc::new(RefCell::new(font_atlas)),
             clipboard_selection: String::new(),
             clipboard: Box::new(crate::LocalClipboard::new()),
             time: 0.0,
@@ -437,7 +430,7 @@ impl Ui {
 
         let focused = self.is_focused(id);
         let margin = self.style.margin;
-        let font_atlas = self.font_atlas.clone();
+        let font_atlas = Rc::clone(&self.font_atlas);
         let windows_focus_order = &mut self.windows_focus_order;
 
         let parent_clip_rect = if let Some(parent) = parent {
@@ -497,7 +490,7 @@ impl Ui {
         position: Vector2,
         size: Vector2,
     ) -> WindowContext {
-        let font_atlas = self.font_atlas.clone();
+        let font_atlas = Rc::clone(&self.font_atlas);
 
         let window = self.modal.get_or_insert_with(|| {
             Window::new(id, None, position, size, 0.0, 0.0, false, font_atlas)
@@ -727,5 +720,21 @@ impl Ui {
         let context = self.get_active_window_context();
 
         DrawCanvas { context }
+    }
+
+    fn process_font_atlas(font_atlas: &mut FontAtlas) {
+        let white_square = [(0, 0), (1, 0), (1, 1), (0, 1)];
+        let w = font_atlas.texture.width;
+        for pixel in white_square.iter() {
+            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 0) as usize] = 255;
+            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 1) as usize] = 255;
+            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 2) as usize] = 255;
+            font_atlas.texture.data[(pixel.0 + w * pixel.1 + 3) as usize] = 255;
+        }
+    }
+
+    pub fn set_font_atlas(&mut self, mut font_atlas: FontAtlas) {
+        Ui::process_font_atlas(&mut font_atlas);
+        self.font_atlas.replace(font_atlas);
     }
 }
