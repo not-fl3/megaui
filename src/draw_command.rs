@@ -172,7 +172,7 @@ impl CommandsList {
             self.add_command(cmd);
             Some(advance)
         } else {
-            None    
+            None
         }
     }
 

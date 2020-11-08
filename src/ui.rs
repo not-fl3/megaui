@@ -550,7 +550,7 @@ impl Ui {
     }
 
     /// Scrolls the middle of the active GUI window to its GUI cursor
-    /// 
+    ///
     /// Note that this does not work on the first frame of the GUI application.
     /// If you want your widget to start with its scrollbar in a particular location,
     /// consider `if ui.frame == 1 { ui.scroll_here() }`.
@@ -559,10 +559,10 @@ impl Ui {
     }
 
     /// Scrolls the active GUI window to its GUI cursor.
-    /// 
+    ///
     /// 1.0 puts the bottom of the window at the GUI cursor,
     /// 0.0 puts the top of the window there.
-    /// 
+    ///
     /// 0.5 as the ratio puts the middle of the window at the GUI cursor,
     /// and is equivalent to `Ui::scroll_here`.
     pub fn scroll_here_ratio(&mut self, ratio: f32) {
@@ -572,7 +572,7 @@ impl Ui {
     }
 
     /// How far the active gui window has been scrolled down on the y axis.
-    /// 
+    ///
     /// Note that for these purposes, a Group widget is still considered a Window
     /// because it can have its own scrollbar.
     pub fn scroll(&mut self) -> Vector2 {
@@ -580,7 +580,7 @@ impl Ui {
     }
 
     /// The farthest down a scrollbar may go given the constraints of its window.
-    /// 
+    ///
     /// Note that for these purposes, a Group widget is still considered a Window
     /// because it can have its own scrollbar.
     pub fn scroll_max(&mut self) -> Vector2 {
