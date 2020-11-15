@@ -4,15 +4,15 @@ use crate::{
     Id, Layout, Ui,
 };
 
-pub struct Tabbar {
+pub struct Tabbar<'a> {
     id: Id,
     position: Vector2,
     size: Vector2,
-    tabs: &'static [&'static str],
+    tabs: &'a [&'a str],
 }
 
-impl Tabbar {
-    pub fn new(id: Id, position: Vector2, size: Vector2, tabs: &'static [&'static str]) -> Tabbar {
+impl Tabbar<'_> {
+    pub fn new<'a>(id: Id, position: Vector2, size: Vector2, tabs: &'a [&'a str]) -> Tabbar<'a> {
         Tabbar {
             id,
             position,
@@ -56,10 +56,11 @@ impl Tabbar {
                 ),
             );
 
+            let text_width = context.window.draw_commands.label_size(label, None).x;
             context.window.draw_commands.draw_label(
                 label,
                 pos + Vector2::new(
-                    width * n as f32 + width / 2.,
+                    width * n as f32 + (width - text_width) / 2.,
                     context.global_style.margin_button + 2.,
                 ),
                 (
@@ -77,12 +78,12 @@ impl Tabbar {
 }
 
 impl Ui {
-    pub fn tabbar(
+    pub fn tabbar<'a>(
         &mut self,
         id: Id,
         position: Vector2,
         size: Vector2,
-        tabs: &'static [&'static str],
+        tabs: &'a [&'a str],
     ) -> u32 {
         Tabbar::new(id, position, size, tabs).ui(self)
     }
