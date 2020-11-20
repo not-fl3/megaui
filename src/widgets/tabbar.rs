@@ -8,7 +8,7 @@ pub struct Tabbar<'a> {
     id: Id,
     position: Vector2,
     size: Vector2,
-    jump_to_tab: Option<usize>,
+    selected_tab: Option<usize>,
     tabs: &'a [&'a str],
 }
 
@@ -19,13 +19,13 @@ impl Tabbar<'_> {
             position,
             size,
             tabs,
-            jump_to_tab: None,
+            selected_tab: None,
         }
     }
 
-    pub fn jump_to_tab(self, jump: usize) -> Self {
+    pub fn selected_tab(self, selected_tab: Option<usize>) -> Self {
         Tabbar {
-            jump_to_tab: Some(jump),
+            selected_tab,
             ..self
         }
     }
@@ -41,7 +41,7 @@ impl Tabbar<'_> {
         let width = self.size.x as f32 / self.tabs.len() as f32;
         let selected = {
             let selected_mut = context.storage_u32.entry(self.id).or_insert(0);
-            if let Some(n) = self.jump_to_tab {
+            if let Some(n) = self.selected_tab {
                 *selected_mut = n as u32;
             };
             *selected_mut
