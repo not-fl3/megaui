@@ -556,6 +556,29 @@ impl Ui {
         }
     }
 
+    /// Returns true if the last widget which had `.ui` called on it is being clicked.
+    pub fn last_item_clicked(&mut self) -> bool {
+        let click_down = self.input.click_down();
+        let mouse_pos = self.input.mouse_position;
+
+        let context = self.get_active_window_context();
+        let last_child = context.window.childs.last().copied();
+        last_child
+            .map(|id| self.windows[&id].cursor.area.contains(mouse_pos) && click_down)
+            .unwrap_or(false)
+    }
+
+    /// Returns true if the mouse is over the last widget which had `.ui` called on it.
+    pub fn last_item_hovered(&mut self) -> bool {
+        let mouse_pos = self.input.mouse_position;
+
+        let context = self.get_active_window_context();
+        let last_child = context.window.childs.last().copied();
+        last_child
+            .map(|id| self.windows[&id].cursor.area.contains(mouse_pos))
+            .unwrap_or(false)
+    }
+
     /// Scrolls the middle of the active GUI window to its GUI cursor
     /// 
     /// Note that this does not work on the first frame of the GUI application.
