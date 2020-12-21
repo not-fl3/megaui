@@ -94,6 +94,7 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
         let modal_rect = Rect::new(pos.x, pos.y, modal_size.x, modal_size.y);
         if *state
             && (context.input.escape
+                || context.input.enter
                 || (modal_rect.contains(context.input.mouse_position) == false
                     && context.input.click_down))
         {

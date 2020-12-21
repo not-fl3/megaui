@@ -25,6 +25,7 @@ pub struct Input {
     pub(crate) input_buffer: Vec<InputCharacter>,
     pub(crate) modifier_ctrl: bool,
     pub(crate) escape: bool,
+    pub(crate) enter: bool,
     pub(crate) cursor_grabbed: bool,
     // TODO: its a hack to prevent button click behind modal
     pub(crate) modal_active: bool,
@@ -53,6 +54,7 @@ impl Input {
     pub fn reset(&mut self) {
         self.modifier_ctrl = false;
         self.escape = false;
+        self.enter = false;
         self.click_down = false;
         self.click_up = false;
         self.modal_active = false;

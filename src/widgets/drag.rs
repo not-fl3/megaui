@@ -113,7 +113,10 @@ impl<'a> Drag<'a> {
                 s.in_editbox = true;
             }
         } else {
-            if context.input.escape || (hovered == false && context.input.is_mouse_down()) {
+            if context.input.escape
+                || context.input.enter
+                || (hovered == false && context.input.is_mouse_down())
+            {
                 s.in_editbox = false;
             }
         }

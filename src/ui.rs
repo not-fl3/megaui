@@ -380,6 +380,9 @@ impl InputHandler for Ui {
         if key == KeyCode::Escape {
             self.input.escape = true;
         }
+        if key == KeyCode::Enter {
+            self.input.enter = true;
+        }
 
         if ctrl && (key == KeyCode::C || key == KeyCode::X) {
             self.clipboard.set(&self.clipboard_selection);
