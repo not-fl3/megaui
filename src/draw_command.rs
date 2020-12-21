@@ -4,9 +4,6 @@ use miniquad_text_rusttype::FontAtlas;
 
 use std::rc::Rc;
 
-trait Wtf: std::any::Any + Clone {
-}
-
 #[derive(Debug, Clone)]
 pub(crate) enum DrawCommand {
     DrawCharacter {
@@ -51,10 +48,7 @@ impl DrawCommand {
                 source,
                 color,
             },
-            DrawCommand::DrawRawTexture {
-                rect,
-                texture,
-            } => DrawCommand::DrawRawTexture {
+            DrawCommand::DrawRawTexture { rect, texture } => DrawCommand::DrawRawTexture {
                 rect: rect.offset(offset),
                 texture,
             },
@@ -148,13 +142,22 @@ impl CommandsList {
             // (x, y + self.font_size.y)..(x + advance, y + _)
             let top_coord = self.font_atlas.font_size as f32 - font_data.height_over_line - 4.0;
 
+            let rect = Rect::new(
+                left_coord + position.x,
+                top_coord + position.y,
+                font_data.size.0,
+                font_data.size.1,
+            );
+            if self
+                .clipping_zone
+                .map_or(false, |clip| !clip.overlaps(&rect))
+            {
+                let advance = font_data.left_padding + font_data.size.0 + font_data.right_padding;
+                return Some(advance);
+            }
+
             let cmd = DrawCommand::DrawCharacter {
-                dest: Rect::new(
-                    left_coord + position.x,
-                    top_coord + position.y,
-                    font_data.size.0,
-                    font_data.size.1,
-                ),
+                dest: rect,
                 source: Rect::new(
                     font_data.tex_coords.0,
                     font_data.tex_coords.1,
@@ -194,16 +197,14 @@ impl CommandsList {
     }
 
     pub fn draw_raw_texture(&mut self, rect: Rect, texture: u32) {
-        if self.clipping_zone.map_or(false, |clip| {
-            !clip.overlaps(&rect)
-        }) {
+        if self
+            .clipping_zone
+            .map_or(false, |clip| !clip.overlaps(&rect))
+        {
             return;
         }
 
-        self.add_command(DrawCommand::DrawRawTexture {
-            rect,
-            texture,
-        })
+        self.add_command(DrawCommand::DrawRawTexture { rect, texture })
     }
 
     pub fn draw_rect<S, T>(&mut self, rect: Rect, stroke: S, fill: T)

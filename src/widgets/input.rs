@@ -8,7 +8,11 @@ pub struct InputText<'a> {
     id: Id,
     label: &'a str,
     size: Option<Vector2>,
+    numbers: bool,
 }
+
+#[deprecated(note = "Use InputText instead")]
+pub type InputField<'a> = InputText<'a>;
 
 impl<'a> InputText<'a> {
     pub fn new(id: Id) -> InputText<'a> {
@@ -16,6 +20,7 @@ impl<'a> InputText<'a> {
             id,
             size: None,
             label: "",
+            numbers: false,
         }
     }
 
@@ -24,12 +29,20 @@ impl<'a> InputText<'a> {
             id: self.id,
             size: self.size,
             label,
+            numbers: self.numbers,
         }
     }
 
     pub fn size(self, size: Vector2) -> Self {
         Self {
             size: Some(size),
+            ..self
+        }
+    }
+
+    pub fn filter_numbers(self) -> Self {
+        Self {
+            numbers: true,
             ..self
         }
     }
@@ -52,9 +65,13 @@ impl<'a> InputText<'a> {
         } else {
             size.x / 2.
         };
-        let editbox = Editbox::new(self.id, Vector2::new(editbox_area_w, size.y))
+        let mut editbox = Editbox::new(self.id, Vector2::new(editbox_area_w, size.y))
             .position(pos)
             .multiline(false);
+        if self.numbers {
+            editbox = editbox
+                .filter(&|character| character.is_digit(10) || character == '.' || character == '-')
+        }
         editbox.ui(ui, data);
 
         let context = ui.get_active_window_context();
@@ -70,6 +87,11 @@ impl<'a> InputText<'a> {
 }
 
 impl Ui {
+    #[deprecated(note = "Use input_text instead")]
+    pub fn input_field(&mut self, id: Id, label: &str, data: &mut String) {
+        InputText::new(id).label(label).ui(self, data)
+    }
+
     pub fn input_text(&mut self, id: Id, label: &str, data: &mut String) {
         InputText::new(id).label(label).ui(self, data)
     }

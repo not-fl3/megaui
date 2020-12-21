@@ -34,7 +34,7 @@ impl<'a> Button<'a> {
     }
 
     pub fn ui(self, ui: &mut Ui) -> bool {
-        let context = ui.get_active_window_context();
+        let mut context = ui.get_active_window_context();
 
         let size = self.size.unwrap_or_else(|| {
             context.window.draw_commands.label_size(&self.label, None)
@@ -49,7 +49,7 @@ impl<'a> Button<'a> {
             .cursor
             .fit(size, self.position.map_or(Layout::Vertical, Layout::Free));
         let rect = Rect::new(pos.x, pos.y, size.x as f32, size.y as f32);
-        let hovered = rect.contains(context.input.mouse_position);
+        let (hovered, clicked) = context.register_click_intention(rect);
 
         context.window.draw_commands.draw_rect(
             rect,
@@ -69,7 +69,7 @@ impl<'a> Button<'a> {
             Some(context.global_style.text(context.focused)),
         );
 
-        context.focused && hovered && context.input.click_up()
+        clicked
     }
 }
 

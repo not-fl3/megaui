@@ -1,6 +1,7 @@
+mod canvas;
 ///! GUI crate originally intended for use with macroquad.
 ///! The API is inspired largely by imgui.
-///! 
+///!
 ///! Several methods in megaui, such as `Ui::scroll_here`, implicitly rely on the concept of a GUI cursor.
 ///! This gui cursor is not to be confused with the mouse cursor.
 ///! Instead it describes where the next widget will be placed
@@ -11,7 +12,6 @@ mod input_handler;
 mod style;
 mod types;
 mod ui;
-mod canvas;
 
 pub mod widgets;
 
@@ -46,19 +46,21 @@ macro_rules! hash {
     }};
 }
 
+pub struct StorageContext();
+
 pub trait ClipboardObject {
     fn get(&self) -> Option<String>;
     fn set(&mut self, data: &str);
 }
 
 pub(crate) struct LocalClipboard {
-    data: String
+    data: String,
 }
 
 impl LocalClipboard {
     fn new() -> LocalClipboard {
         LocalClipboard {
-            data: String::new()
+            data: String::new(),
         }
     }
 }

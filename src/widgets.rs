@@ -1,10 +1,12 @@
 mod button;
+mod checkbox;
 mod combobox;
+mod drag;
 mod editbox;
 mod group;
-mod input_text;
-mod input_num;
+mod input;
 mod label;
+mod popup;
 mod separator;
 mod slider;
 mod tabbar;
@@ -13,12 +15,14 @@ mod tree_node;
 mod window;
 
 pub use button::Button;
+pub use checkbox::Checkbox;
 pub use combobox::ComboBox;
 pub use editbox::Editbox;
 pub use group::{Group, GroupToken};
-pub use input_text::InputText;
-pub use input_num::InputNum;
+#[allow(deprecated)]
+pub use input::{InputText, InputField};
 pub use label::Label;
+pub use popup::Popup;
 pub use slider::Slider;
 pub use tabbar::Tabbar;
 pub use texture::Texture;

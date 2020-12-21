@@ -10,6 +10,8 @@ pub enum KeyCode {
     Tab,
     Home,
     End,
+    Control,
+    Escape,
     A, // select all
     Z, // undo
     Y, // redo

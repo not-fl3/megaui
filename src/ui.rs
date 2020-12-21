@@ -154,12 +154,15 @@ pub struct Ui {
     active_window: Option<Id>,
     child_window_stack: Vec<Id>,
 
+    last_item_clicked: bool,
+    last_item_hovered: bool,
+
     pub font_atlas: Rc<FontAtlas>,
 
     clipboard_selection: String,
     clipboard: Box<dyn crate::ClipboardObject>,
 
-    key_repeat: key_repeat::KeyRepeat
+    key_repeat: key_repeat::KeyRepeat,
 }
 
 #[derive(Default)]
@@ -200,6 +203,8 @@ pub(crate) struct WindowContext<'a> {
     pub clipboard_selection: &'a mut String,
     pub clipboard: &'a mut dyn crate::ClipboardObject,
     pub focused: bool,
+    pub last_item_clicked: &'a mut bool,
+    pub last_item_hovered: &'a mut bool,
 }
 
 impl<'a> WindowContext<'a> {
@@ -287,6 +292,13 @@ impl<'a> WindowContext<'a> {
                 .scroll_bar_handle(self.focused, hovered, clicked),
         );
     }
+
+    pub fn register_click_intention(&mut self, rect: Rect) -> (bool, bool) {
+        *self.last_item_hovered = rect.contains(self.input.mouse_position);
+        *self.last_item_clicked = *self.last_item_hovered && self.input.click_down();
+
+        (*self.last_item_hovered, *self.last_item_clicked)
+    }
 }
 
 impl InputHandler for Ui {
@@ -354,6 +366,7 @@ impl InputHandler for Ui {
     }
 
     fn char_event(&mut self, character: char, shift: bool, ctrl: bool) {
+        self.input.modifier_ctrl = ctrl;
         self.input.input_buffer.push(input::InputCharacter {
             key: input::Key::Char(character),
             modifier_shift: shift,
@@ -361,12 +374,18 @@ impl InputHandler for Ui {
         });
     }
 
-    fn key_down(&mut self, key: crate::input_handler::KeyCode, shift: bool, ctrl: bool) {
+    fn key_down(&mut self, key: KeyCode, shift: bool, ctrl: bool) {
+        self.input.modifier_ctrl = ctrl;
+
+        if key == KeyCode::Escape {
+            self.input.escape = true;
+        }
+
         if ctrl && (key == KeyCode::C || key == KeyCode::X) {
             self.clipboard.set(&self.clipboard_selection);
         }
 
-        if self.key_repeat.add_repeat_gap(key, self.time) {
+        if key != KeyCode::Control && self.key_repeat.add_repeat_gap(key, self.time) {
             self.input.input_buffer.push(input::InputCharacter {
                 key: input::Key::KeyCode(key),
                 modifier_shift: shift,
@@ -413,7 +432,9 @@ impl Ui {
             clipboard_selection: String::new(),
             clipboard: Box::new(crate::LocalClipboard::new()),
             time: 0.0,
-            key_repeat: key_repeat::KeyRepeat::new()
+            key_repeat: key_repeat::KeyRepeat::new(),
+            last_item_clicked: false,
+            last_item_hovered: false,
         }
     }
 
@@ -488,6 +509,8 @@ impl Ui {
             storage_any: &mut self.storage_any,
             clipboard_selection: &mut self.clipboard_selection,
             clipboard: &mut *self.clipboard,
+            last_item_clicked: &mut self.last_item_clicked,
+            last_item_hovered: &mut self.last_item_hovered,
         }
     }
 
@@ -497,6 +520,8 @@ impl Ui {
         position: Vector2,
         size: Vector2,
     ) -> WindowContext {
+        self.input.in_modal = true;
+
         let font_atlas = self.font_atlas.clone();
 
         let window = self.modal.get_or_insert_with(|| {
@@ -522,12 +547,13 @@ impl Ui {
             storage_any: &mut self.storage_any,
             clipboard_selection: &mut self.clipboard_selection,
             clipboard: &mut *self.clipboard,
+            last_item_clicked: &mut self.last_item_clicked,
+            last_item_hovered: &mut self.last_item_hovered,
         }
     }
 
     pub(crate) fn end_modal(&mut self) {
-        // do nothing
-        // modal window will end itself while its the only modal window
+        self.input.in_modal = false;
     }
 
     pub(crate) fn end_window(&mut self) {
@@ -535,11 +561,17 @@ impl Ui {
     }
 
     pub(crate) fn get_active_window_context(&mut self) -> WindowContext {
-        let active_window = self
-            .active_window
-            .expect("Rendering outside of window unsupported");
-        let focused = self.is_focused(active_window);
-        let window = self.windows.get_mut(&active_window).unwrap();
+        let focused;
+        let window = if self.input.in_modal == false {
+            let active_window = self
+                .active_window
+                .expect("Rendering outside of window unsupported");
+            focused = self.is_focused(active_window);
+            self.windows.get_mut(&active_window).unwrap()
+        } else {
+            focused = true;
+            self.modal.as_mut().unwrap()
+        };
 
         WindowContext {
             window,
@@ -553,34 +585,23 @@ impl Ui {
             storage_any: &mut self.storage_any,
             clipboard_selection: &mut self.clipboard_selection,
             clipboard: &mut *self.clipboard,
+            last_item_clicked: &mut self.last_item_clicked,
+            last_item_hovered: &mut self.last_item_hovered,
         }
     }
 
     /// Returns true if the last widget which had `.ui` called on it is being clicked.
     pub fn last_item_clicked(&mut self) -> bool {
-        let click_down = self.input.click_down();
-        let mouse_pos = self.input.mouse_position;
-
-        let context = self.get_active_window_context();
-        let last_child = context.window.childs.last().copied();
-        last_child
-            .map(|id| self.windows[&id].cursor.area.contains(mouse_pos) && click_down)
-            .unwrap_or(false)
+        self.last_item_clicked
     }
 
     /// Returns true if the mouse is over the last widget which had `.ui` called on it.
     pub fn last_item_hovered(&mut self) -> bool {
-        let mouse_pos = self.input.mouse_position;
-
-        let context = self.get_active_window_context();
-        let last_child = context.window.childs.last().copied();
-        last_child
-            .map(|id| self.windows[&id].cursor.area.contains(mouse_pos))
-            .unwrap_or(false)
+        self.last_item_hovered
     }
 
     /// Scrolls the middle of the active GUI window to its GUI cursor
-    /// 
+    ///
     /// Note that this does not work on the first frame of the GUI application.
     /// If you want your widget to start with its scrollbar in a particular location,
     /// consider `if ui.frame == 1 { ui.scroll_here() }`.
@@ -589,10 +610,10 @@ impl Ui {
     }
 
     /// Scrolls the active GUI window to its GUI cursor.
-    /// 
+    ///
     /// 1.0 puts the bottom of the window at the GUI cursor,
     /// 0.0 puts the top of the window there.
-    /// 
+    ///
     /// 0.5 as the ratio puts the middle of the window at the GUI cursor,
     /// and is equivalent to `Ui::scroll_here`.
     pub fn scroll_here_ratio(&mut self, ratio: f32) {
@@ -602,7 +623,7 @@ impl Ui {
     }
 
     /// How far the active gui window has been scrolled down on the y axis.
-    /// 
+    ///
     /// Note that for these purposes, a Group widget is still considered a Window
     /// because it can have its own scrollbar.
     pub fn scroll(&mut self) -> Vector2 {
@@ -610,7 +631,7 @@ impl Ui {
     }
 
     /// The farthest down a scrollbar may go given the constraints of its window.
-    /// 
+    ///
     /// Note that for these purposes, a Group widget is still considered a Window
     /// because it can have its own scrollbar.
     pub fn scroll_max(&mut self) -> Vector2 {
@@ -625,6 +646,10 @@ impl Ui {
         self.clipboard = Box::new(clipboard);
     }
 
+    pub fn is_mouse_captured(&self) -> bool {
+        self.input.cursor_grabbed
+    }
+
     pub fn is_mouse_over(&self, mouse_position: Vector2) -> bool {
         for window in self.windows_focus_order.iter() {
             let window = &self.windows[window];
@@ -633,6 +658,13 @@ impl Ui {
             }
             if window.full_rect().contains(mouse_position) {
                 return true;
+            }
+        }
+        for window in &self.modal {
+            if window.was_active {
+                if window.full_rect().contains(mouse_position) {
+                    return true;
+                }
             }
         }
         false
@@ -671,6 +703,9 @@ impl Ui {
         self.frame += 1;
         self.time += delta;
 
+        self.last_item_clicked = false;
+        self.last_item_hovered = false;
+
         self.drag_hovered_previous_frame = self.drag_hovered;
         self.drag_hovered = None;
         self.input.reset();
@@ -702,6 +737,7 @@ impl Ui {
                 self.render_window(window, Vector2::new(0., 0.), draw_list);
             }
         }
+
         if let Some(modal) = self.modal.as_ref() {
             if modal.was_active {
                 self.render_window(modal, Vector2::new(0., 0.), draw_list);
@@ -750,5 +786,22 @@ impl Ui {
         let context = self.get_active_window_context();
 
         DrawCanvas { context }
+    }
+
+    /// small hack to keep some internal state
+    /// used like this:
+    /// ```skip
+    /// if ui.last_item_clicked() {
+    ///     *ui.get_bool(hash!("color picker opened")) ^= true;
+    /// }
+    /// if *ui.get_bool(hash!("color picker opened"))  {
+    /// }
+    /// ```
+    pub fn get_bool(&mut self, id: Id) -> &mut bool {
+        self.storage_any.get_or_default(id)
+    }
+
+    pub fn get_any<T: std::any::Any + Default>(&mut self, id: Id) -> &mut T {
+        self.storage_any.get_or_default(id)
     }
 }

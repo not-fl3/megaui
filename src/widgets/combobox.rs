@@ -28,7 +28,7 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
         }
     }
 
-    pub fn ui(self, ui: &mut Ui) -> usize {
+    pub fn ui(self, ui: &mut Ui, data: &mut usize) -> usize {
         let context = ui.get_active_window_context();
 
         let size = Vector2::new(
@@ -45,12 +45,11 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
         let clickable_rect = Rect::new(pos.x, pos.y, active_area_w, size.y);
         let hovered = clickable_rect.contains(context.input.mouse_position);
 
-        let (ref mut state, ref mut selection) = context
+        let state = context
             .storage_any
-            .get_or_default::<(bool, usize)>(hash!(self.id, "combobox_state"));
+            .get_or_default::<bool>(hash!(self.id, "combobox_state"));
 
         if context.window.was_active == false {
-            *selection = 0;
             *state = false;
         }
         context.window.draw_commands.draw_rect(
@@ -59,7 +58,7 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
             None,
         );
         context.window.draw_commands.draw_label(
-            self.variants[*selection],
+            self.variants[*data],
             Vector2::new(pos.x + 5., pos.y + 2.),
             Color::from_rgba(0, 0, 0, 255),
         );
@@ -91,16 +90,22 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
             *state ^= true;
         }
 
-        if *state {
-            let context = ui.begin_modal(
-                hash!("combobox", self.id),
-                pos,
-                Vector2::new(200.0, self.variants.len() as f32 * 20.0 + 20.0),
-            );
+        let modal_size = Vector2::new(200.0, self.variants.len() as f32 * 20.0 + 20.0);
+        let modal_rect = Rect::new(pos.x, pos.y, modal_size.x, modal_size.y);
+        if *state
+            && (context.input.escape
+                || (modal_rect.contains(context.input.mouse_position) == false
+                    && context.input.click_down))
+        {
+            *state = false;
+        }
 
-            let (ref mut state, ref mut selection) = context
+        if *state {
+            let context = ui.begin_modal(hash!("combobox", self.id), pos, modal_size);
+
+            let state = context
                 .storage_any
-                .get_or_default::<(bool, usize)>(hash!(self.id, "combobox_state"));
+                .get_or_default::<bool>(hash!(self.id, "combobox_state"));
 
             for (i, variant) in self.variants.iter().enumerate() {
                 let rect = Rect::new(
@@ -115,10 +120,10 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
                     rect,
                     context
                         .global_style
-                        .combobox_variant_border(hovered, *selection == i),
+                        .combobox_variant_border(hovered, *data == i),
                     context
                         .global_style
-                        .combobox_variant_background(hovered, *selection == i),
+                        .combobox_variant_background(hovered, *data == i),
                 );
 
                 context.window.draw_commands.draw_label(
@@ -128,25 +133,38 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
                 );
 
                 if hovered && context.input.click_up {
-                    *selection = i;
+                    *data = i;
                     *state = false;
                 }
             }
             ui.end_modal();
         }
 
-        let context = ui.get_active_window_context();
-
-        let (_, ref mut selection) = context
-            .storage_any
-            .get_or_default::<(bool, usize)>(hash!(self.id, "combobox_state"));
-
-        *selection
+        *data
     }
 }
 
 impl Ui {
-    pub fn combo_box(&mut self, id: Id, label: &str, variants: &[&str]) -> usize {
-        ComboBox::new(id, variants).label(label).ui(self)
+    pub fn combo_box<'a>(
+        &mut self,
+        id: Id,
+        label: &str,
+        variants: &[&str],
+        data: impl Into<Option<&'a mut usize>>,
+    ) -> usize {
+        if let Some(r) = data.into() {
+            ComboBox::new(id, variants).label(label).ui(self, r)
+        } else {
+            let data_id = hash!(id, "selected_variant");
+            let mut selected_variant = { *self.get_any(data_id) };
+
+            ComboBox::new(id, variants)
+                .label(label)
+                .ui(self, &mut selected_variant);
+
+            *self.get_any(data_id) = selected_variant;
+
+            selected_variant
+        }
     }
 }

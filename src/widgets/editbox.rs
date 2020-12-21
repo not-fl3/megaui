@@ -20,7 +20,6 @@ mod text_editor;
 use text_editor::EditboxState;
 
 const LEFT_MARGIN: f32 = 2.;
-const N_SPACES_IN_TAB: usize = 4;
 
 impl<'a> Editbox<'a> {
     pub fn new(id: Id, size: Vector2) -> Editbox<'a> {
@@ -40,7 +39,10 @@ impl<'a> Editbox<'a> {
     }
 
     pub fn select_all(self) -> Self {
-        Editbox { select_all: true, ..self }
+        Editbox {
+            select_all: true,
+            ..self
+        }
     }
 
     pub fn position(self, pos: Vector2) -> Self {
@@ -133,7 +135,15 @@ impl<'a> Editbox<'a> {
                                 state.delete_selected(text);
                             }
 
-                            state.insert_string(text, clipboard);
+                            if let Some(filter) = &self.filter {
+                                for character in clipboard.chars() {
+                                    if filter(character) {
+                                        state.insert_character(text, character);
+                                    }
+                                }
+                            } else {
+                                state.insert_string(text, clipboard);
+                            }
                         }
                     }
                 }
@@ -150,32 +160,6 @@ impl<'a> Editbox<'a> {
                 } => {
                     if self.multiline {
                         state.insert_character(text, '\n');
-                    }
-                }
-                InputCharacter {
-                    key: Key::KeyCode(Tab),
-                    modifier_shift: false,
-                    ..
-                } => {
-                    state.insert_string(text, " ".repeat(N_SPACES_IN_TAB));
-                }
-                InputCharacter {
-                    key: Key::KeyCode(Tab),
-                    modifier_shift: true,
-                    ..
-                } => {
-                    for _ in 0..N_SPACES_IN_TAB {
-                        let cursor = state.cursor as usize;
-                        if cursor != 0  {
-                            let current_char = text.chars().nth(cursor - 1).unwrap();
-                            if current_char == ' ' {
-                                state.delete_current_character(text);
-                            } else {
-                                return
-                            }
-                        } else {
-                            return
-                        }
                     }
                 }
                 InputCharacter {

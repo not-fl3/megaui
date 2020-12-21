@@ -17,6 +17,16 @@ pub struct Style {
     pub editbox_background_focused: Color,
     pub editbox_background_inactive: Color,
 
+    pub checkbox_background_focused: Color,
+    pub checkbox_background_inactive: Color,
+    pub checkbox_background_hovered: Color,
+
+    pub checkbox_mark_focused: Color,
+    pub checkbox_mark_inactive: Color,
+
+    pub drag_background_focused: Color,
+    pub drag_background_inactive: Color,
+
     pub scrollbar_background_focused_clicked: Color,
     pub scrollbar_background_focused_hovered: Color,
     pub scrollbar_background_focused: Color,
@@ -77,6 +87,13 @@ impl Default for Style {
             window_background_inactive: Color::from_rgba(238, 238, 238, 128),
             editbox_background_focused: Color::from_rgba(200, 200, 200, 255),
             editbox_background_inactive: Color::from_rgba(200, 200, 200, 128),
+            drag_background_focused: Color::from_rgba(230, 230, 230, 255),
+            drag_background_inactive: Color::from_rgba(230, 230, 230, 128),
+            checkbox_background_focused: Color::from_rgba(220, 220, 220, 255),
+            checkbox_background_inactive: Color::from_rgba(230, 230, 230, 128),
+            checkbox_background_hovered: Color::from_rgba(200, 200, 200, 255),
+            checkbox_mark_focused: Color::from_rgba(180, 180, 180, 255),
+            checkbox_mark_inactive: Color::from_rgba(210, 210, 210, 128),
             scrollbar_background_focused_clicked: Color::from_rgba(170, 170, 170, 235),
             scrollbar_background_focused_hovered: Color::from_rgba(180, 180, 180, 235),
             scrollbar_background_focused: Color::from_rgba(204, 204, 204, 235),
@@ -143,6 +160,32 @@ impl Style {
             self.editbox_background_focused
         } else {
             self.editbox_background_inactive
+        }
+    }
+
+    pub fn checkbox_background(&self, focused: bool, hovered: bool) -> Color {
+        if hovered {
+            self.checkbox_background_hovered
+        } else if focused {
+            self.checkbox_background_focused
+        } else {
+            self.checkbox_background_inactive
+        }
+    }
+
+    pub fn checkbox_mark_background(&self, focused: bool) -> Color {
+        if focused {
+            self.checkbox_mark_focused
+        } else  {
+            self.checkbox_mark_inactive
+        } 
+    }
+
+    pub fn drag_background(&self, focused: bool) -> Color {
+        if focused {
+            self.drag_background_focused
+        } else {
+            self.drag_background_inactive
         }
     }
 
