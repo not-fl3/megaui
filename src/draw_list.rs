@@ -169,8 +169,11 @@ fn get_active_draw_list<'a, 'b>(
         }
         DrawCommand::DrawRawTexture { texture, .. } => {
             if last.texture != Some(*texture) {
+                let clipping_zone = last.clipping_zone;
+
                 draw_lists.push(DrawList {
                     texture: Some(*texture),
+                    clipping_zone,
                     ..DrawList::new()
                 });
             }
@@ -180,7 +183,12 @@ fn get_active_draw_list<'a, 'b>(
         | DrawCommand::DrawRect { .. }
         | DrawCommand::DrawTriangle { .. } => {
             if last.texture != None {
-                draw_lists.push(DrawList::new());
+                let clipping_zone = last.clipping_zone;
+
+                draw_lists.push(DrawList {
+                    clipping_zone,
+                    ..DrawList::new()
+                });
             }
         }
     }
