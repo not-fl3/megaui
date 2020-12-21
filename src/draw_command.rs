@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use crate::{Color, Rect, Vector2};
 
 use miniquad_text_rusttype::FontAtlas;
@@ -84,11 +85,11 @@ impl DrawCommand {
 pub(crate) struct CommandsList {
     pub commands: Vec<DrawCommand>,
     pub clipping_zone: Option<Rect>,
-    font_atlas: Rc<FontAtlas>,
+    font_atlas: Rc<RefCell<FontAtlas>>,
 }
 
 impl CommandsList {
-    pub fn new(font_atlas: Rc<FontAtlas>) -> CommandsList {
+    pub fn new(font_atlas: Rc<RefCell<FontAtlas>>) -> CommandsList {
         CommandsList {
             commands: vec![],
             clipping_zone: None,
@@ -109,8 +110,8 @@ impl CommandsList {
     /// usually used as an advance between current cursor position
     /// and next potential character
     pub fn character_advance(&self, character: char) -> f32 {
-        if let Some(font_data) = self.font_atlas.character_infos.get(&character) {
-            let font_data = font_data.scale(self.font_atlas.font_size as f32);
+        if let Some(font_data) = self.font_atlas.borrow().character_infos.get(&character) {
+            let font_data = font_data.scale(self.font_atlas.borrow().font_size as f32);
             let advance = font_data.left_padding + font_data.size.0 + font_data.right_padding;
 
             return advance;
@@ -137,8 +138,9 @@ impl CommandsList {
         position: Vector2,
         color: Color,
     ) -> Option<f32> {
-        if let Some(font_data) = self.font_atlas.character_infos.get(&character) {
-            let font_data = font_data.scale(self.font_atlas.font_size as f32);
+        let mut out = None;
+        if let Some(font_data) = self.font_atlas.borrow().character_infos.get(&character) {
+            let font_data = font_data.scale(self.font_atlas.borrow().font_size as f32);
 
             let left_coord = font_data.left_padding;
             // 4.0 cames from lack of understanding of how ttf works
@@ -146,7 +148,7 @@ impl CommandsList {
             // (x, y).....................(x + advance, y)
             // ...........................
             // (x, y + self.font_size.y)..(x + advance, y + _)
-            let top_coord = self.font_atlas.font_size as f32 - font_data.height_over_line - 4.0;
+            let top_coord = self.font_atlas.borrow().font_size as f32 - font_data.height_over_line - 4.0;
 
             let cmd = DrawCommand::DrawCharacter {
                 dest: Rect::new(
@@ -163,9 +165,11 @@ impl CommandsList {
                 ),
                 color: color,
             };
-            self.add_command(cmd);
-
             let advance = font_data.left_padding + font_data.size.0 + font_data.right_padding;
+            out = Some((cmd, advance))
+        }
+        if let Some((cmd, advance)) = out {
+            self.add_command(cmd);
             Some(advance)
         } else {
             None

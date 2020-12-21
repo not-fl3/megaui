@@ -20,6 +20,7 @@ pub use input_handler::{InputHandler, KeyCode};
 pub use style::Style;
 pub use types::{Color, Rect, Vector2};
 pub use ui::{Drag, Layout, Ui};
+pub use miniquad_text_rusttype::FontAtlas;
 
 pub type Id = u64;
 
