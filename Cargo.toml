@@ -7,7 +7,7 @@ license = "MIT/Apache-2.0"
 homepage = "https://github.com/not-fl3/megaui"
 repository = "https://github.com/not-fl3/megaui"
 description = """
-Simple, zero-depdenencies, immediate mode UI library
+Simple, zero-dependencies, immediate mode UI library 
 """
 
 [dependencies]
