@@ -2,6 +2,9 @@ use crate::draw_command::DrawCommand;
 use crate::types::{Color, Rect};
 use crate::Vector2;
 
+const MAX_VERTICES: usize = 8000;
+const MAX_INDICES: usize = 4000;
+
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct Vertex {
@@ -182,7 +185,12 @@ fn get_active_draw_list<'a, 'b>(
         | DrawCommand::DrawLine { .. }
         | DrawCommand::DrawRect { .. }
         | DrawCommand::DrawTriangle { .. } => {
-            if last.texture != None {
+            let (vertices, indices) = command.estimate_triangles_budget();
+
+            if last.texture != None
+                || last.vertices.len() + vertices >= MAX_VERTICES
+                || last.indices.len() + indices >= MAX_INDICES
+            {
                 let clipping_zone = last.clipping_zone;
 
                 draw_lists.push(DrawList {

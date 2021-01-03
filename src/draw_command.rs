@@ -73,6 +73,17 @@ impl DrawCommand {
             },
         }
     }
+
+    pub(crate) fn estimate_triangles_budget(&self) -> (usize, usize) {
+        match self {
+            DrawCommand::DrawCharacter { .. } => (10, 10),
+            DrawCommand::DrawRawTexture { .. } => (10, 10),
+            DrawCommand::DrawRect { .. } => (10, 10),
+            DrawCommand::DrawLine { .. } => (10, 10),
+            DrawCommand::DrawTriangle { .. } => (10, 10),
+            _ => (0, 0)
+        }
+    }
 }
 
 pub(crate) struct CommandsList {
