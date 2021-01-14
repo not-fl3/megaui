@@ -163,10 +163,24 @@ pub struct EditboxState {
 }
 
 impl EditboxState {
+    pub fn clamp_selection<'a>(&mut self, text: &'a str) {
+        if let Some((ref mut start, ref mut end)) = &mut self.selection {
+            if *start >= text.len() as u32 {
+                *start = text.len() as _;
+            }
+            if *end >= text.len() as u32 {
+                *end = text.len() as _;
+            }
+        }
+    }
+
     pub fn selected_text<'a>(&self, text: &'a str) -> Option<&'a str> {
         if let Some((start, end)) = self.selection {
             let min = start.min(end) as usize;
             let max = start.max(end) as usize;
+
+            assert!(min <= max);
+            assert!(max <= text.len());
 
             Some(&text[min..max])
         } else {

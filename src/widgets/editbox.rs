@@ -277,6 +277,9 @@ impl<'a> Editbox<'a> {
             .storage_any
             .get_or_default::<EditboxState>(hash!(self.id, "cursor"));
 
+        // if text changed outside the selection range should be clamped
+        state.clamp_selection(text);
+
         if self.select_all {
             state.select_all(text);
         }
