@@ -98,8 +98,9 @@ impl Cursor {
         }
         match layout {
             Layout::Horizontal => {
+                self.max_row_y = self.max_row_y.max(size.y);
+
                 if self.x + size.x < self.area.w as f32 - self.margin * 2. {
-                    self.max_row_y = self.max_row_y.max(size.y);
                     res = Vector2::new(self.x, self.y);
                 } else {
                     self.x = self.margin;
