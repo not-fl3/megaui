@@ -13,6 +13,9 @@ impl Ui {
 
         let pos = context.window.cursor.fit(size, Layout::Vertical);
 
+        // hack: to move cursor to the beginning of next line
+        context.window.cursor.fit(Vector2::new(0., 1.), Layout::Vertical);
+
         context.window.draw_commands.draw_line(
             Vector2::new(pos.x, pos.y + 2.),
             Vector2::new(pos.x + size.x, pos.y + 2.),
