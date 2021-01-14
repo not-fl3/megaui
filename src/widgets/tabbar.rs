@@ -6,17 +6,15 @@ use crate::{
 
 pub struct Tabbar<'a> {
     id: Id,
-    position: Vector2,
     size: Vector2,
     selected_tab: Option<usize>,
     tabs: &'a [&'a str],
 }
 
 impl Tabbar<'_> {
-    pub fn new<'a>(id: Id, position: Vector2, size: Vector2, tabs: &'a [&'a str]) -> Tabbar<'a> {
+    pub fn new<'a>(id: Id, size: Vector2, tabs: &'a [&'a str]) -> Tabbar<'a> {
         Tabbar {
             id,
-            position,
             size,
             tabs,
             selected_tab: None,
@@ -33,10 +31,7 @@ impl Tabbar<'_> {
     pub fn ui(self, ui: &mut Ui) -> u32 {
         let context = ui.get_active_window_context();
 
-        let pos = context
-            .window
-            .cursor
-            .fit(self.size, Layout::Free(self.position));
+        let pos = context.window.cursor.fit(self.size, Layout::Vertical);
 
         let width = self.size.x as f32 / self.tabs.len() as f32;
         let selected = {
@@ -96,10 +91,9 @@ impl Ui {
     pub fn tabbar<'a>(
         &mut self,
         id: Id,
-        position: Vector2,
         size: Vector2,
         tabs: &'a [&'a str],
     ) -> u32 {
-        Tabbar::new(id, position, size, tabs).ui(self)
+        Tabbar::new(id, size, tabs).ui(self)
     }
 }
