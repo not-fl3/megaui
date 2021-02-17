@@ -1,6 +1,6 @@
 use crate::{
     canvas::DrawCanvas, draw_command::CommandsList, draw_list::DrawList, types::Rect,
-    types::Vector2, Id, InputHandler, Style,
+    types::Vector2, InputHandler, Style,
 };
 
 use miniquad_text_rusttype::FontAtlas;
@@ -15,6 +15,8 @@ use input::Input;
 
 pub use cursor::Layout;
 pub use input::{InputCharacter, Key, KeyCode};
+
+pub type Id = u64;
 
 pub(crate) struct Window {
     pub id: Id,
@@ -433,7 +435,7 @@ impl Ui {
             storage_any: AnyStorage::default(),
             font_atlas: Rc::new(font_atlas),
             clipboard_selection: String::new(),
-            clipboard: Box::new(crate::LocalClipboard::new()),
+            clipboard: Box::new(crate::clipboard::LocalClipboard::new()),
             time: 0.0,
             key_repeat: key_repeat::KeyRepeat::new(),
             last_item_clicked: false,

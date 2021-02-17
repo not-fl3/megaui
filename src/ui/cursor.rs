@@ -1,3 +1,8 @@
+//! Several methods in megaui, such as `Ui::scroll_here`, implicitly rely on the concept of a GUI cursor.
+//! This gui cursor is not to be confused with the mouse cursor.
+//! Instead it describes where the next widget will be placed
+//! if you do not explicitly set its position with Layout::Free.
+
 use crate::types::{Rect, Vector2};
 
 #[derive(Clone, Debug)]
