@@ -27,28 +27,20 @@ pub struct Input {
     pub(crate) escape: bool,
     pub(crate) enter: bool,
     pub(crate) cursor_grabbed: bool,
-    // TODO: its a hack to prevent button click behind modal
-    pub(crate) modal_active: bool,
-    pub(crate) in_modal: bool,
+    pub(crate) window_active: bool,
 }
 
 impl Input {
     pub fn is_mouse_down(&self) -> bool {
-        self.is_mouse_down
-            && self.cursor_grabbed == false
-            && (self.in_modal || self.modal_active == false)
+        self.is_mouse_down && self.cursor_grabbed == false && self.window_active
     }
 
     pub fn click_down(&self) -> bool {
-        self.click_down
-            && self.cursor_grabbed == false
-            && (self.in_modal || self.modal_active == false)
+        self.click_down && self.cursor_grabbed == false && self.window_active
     }
 
     pub fn click_up(&self) -> bool {
-        self.click_up
-            && self.cursor_grabbed == false
-            && (self.in_modal || self.modal_active == false)
+        self.click_up && self.cursor_grabbed == false && self.window_active
     }
 
     pub fn reset(&mut self) {
@@ -57,8 +49,8 @@ impl Input {
         self.enter = false;
         self.click_down = false;
         self.click_up = false;
-        self.modal_active = false;
         self.mouse_wheel = Vector2::new(0., 0.);
         self.input_buffer = vec![];
+        self.window_active = false;
     }
 }

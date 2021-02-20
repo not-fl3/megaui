@@ -38,6 +38,7 @@ pub(crate) struct Window {
     pub childs: Vec<Id>,
     pub want_close: bool,
     pub input_focus: Option<Id>,
+    pub force_focus: bool,
 }
 
 impl Window {
@@ -49,6 +50,7 @@ impl Window {
         title_height: f32,
         margin: f32,
         movable: bool,
+        force_focus: bool,
         font_atlas: Rc<FontAtlas>,
     ) -> Window {
         Window {
@@ -75,6 +77,7 @@ impl Window {
             want_close: false,
             movable,
             input_focus: None,
+            force_focus,
         }
     }
 
@@ -145,6 +148,10 @@ pub struct Ui {
     // special window that is always rendered on top of anything
     // TODO: maybe make modal windows stack instead
     modal: Option<Window>,
+    // another special window
+    // always rendered behind everything and do not have borders or scrolls
+    // helps using window-less uis
+    root_window: Window,
     windows_focus_order: Vec<Id>,
 
     storage_u32: HashMap<Id, u32>,
@@ -154,6 +161,8 @@ pub struct Ui {
     drag_hovered: Option<Id>,
     drag_hovered_previous_frame: Option<Id>,
     active_window: Option<Id>,
+    hovered_window: Id,
+    in_modal: bool,
     child_window_stack: Vec<Id>,
 
     last_item_clicked: bool,
@@ -296,7 +305,8 @@ impl<'a> WindowContext<'a> {
     }
 
     pub fn register_click_intention(&mut self, rect: Rect) -> (bool, bool) {
-        *self.last_item_hovered = rect.contains(self.input.mouse_position);
+        *self.last_item_hovered =
+            self.input.window_active && rect.contains(self.input.mouse_position);
         *self.last_item_clicked = *self.last_item_hovered && self.input.click_down();
 
         (*self.last_item_hovered, *self.last_item_clicked)
@@ -358,6 +368,27 @@ impl InputHandler for Ui {
     fn mouse_move(&mut self, position: (f32, f32)) {
         let position = Vector2::new(position.0, position.1);
 
+        // assuming that the click was to the root window
+        // if it is not - hovered_window will be setted a little later in that function
+        self.hovered_window = 0;
+        for window in self.windows_focus_order.iter() {
+            let window = &self.windows[window];
+
+            if window.top_level() && window.full_rect().contains(position) {
+                self.hovered_window = window.id;
+                break;
+            }
+        }
+
+        match &self.modal {
+            Some(modal) if modal.was_active || modal.active => {
+                if modal.full_rect().contains(position) {
+                    self.hovered_window = modal.id;
+                }
+            }
+            _ => {}
+        }
+
         self.input.mouse_position = position;
         if let Some((id, orig)) = self.moving.as_ref() {
             self.windows
@@ -418,6 +449,7 @@ impl Ui {
             font_atlas.texture.data[(pixel.0 + w * pixel.1 + 3) as usize] = 255;
         }
 
+        let font_atlas = Rc::new(font_atlas);
         Ui {
             input: Input::default(),
             style: Style::default(),
@@ -425,15 +457,38 @@ impl Ui {
             moving: None,
             windows: HashMap::default(),
             modal: None,
+            root_window: {
+                let mut window = Window::new(
+                    0,
+                    None,
+                    Vector2::new(0., 0.),
+                    // this is not going to be used anywhere but for clipping out
+                    // child window.
+                    // Scissor test is not going to be used by the root window size,
+                    // so this is fine to use weird hardcoded consts here.
+                    // mostly
+                    Vector2::new(10000., 10000.),
+                    0.0,
+                    0.0,
+                    false,
+                    true,
+                    font_atlas.clone(),
+                );
+                window.active = true;
+                window.was_active = true;
+                window
+            },
             windows_focus_order: vec![],
             dragging: None,
             active_window: None,
+            hovered_window: 0,
+            in_modal: false,
             child_window_stack: vec![],
             drag_hovered: None,
             drag_hovered_previous_frame: None,
             storage_u32: HashMap::default(),
             storage_any: AnyStorage::default(),
-            font_atlas: Rc::new(font_atlas),
+            font_atlas,
             clipboard_selection: String::new(),
             clipboard: Box::new(crate::clipboard::LocalClipboard::new()),
             time: 0.0,
@@ -456,9 +511,12 @@ impl Ui {
         title_height: f32,
         movable: bool,
     ) -> WindowContext {
-        if let Some(active_window) = self.active_window {
-            self.child_window_stack.push(active_window);
+        if parent.is_some() {
+            self.child_window_stack
+                .push(self.active_window.unwrap_or(0));
         }
+        self.input.window_active = self.is_input_hovered(id);
+
         self.active_window = Some(id);
 
         let focused = self.is_focused(id);
@@ -466,6 +524,16 @@ impl Ui {
         let font_atlas = self.font_atlas.clone();
         let windows_focus_order = &mut self.windows_focus_order;
 
+        let parent_force_focus = match parent {
+            // childs of root window are always force_focused
+            Some(0) => true,
+            // childs of force_focused windows are alwayws force_focused as well
+            Some(parent) => self
+                .windows
+                .get(&parent)
+                .map_or(false, |window| window.force_focus),
+            _ => false,
+        };
         let parent_clip_rect = if let Some(parent) = parent {
             self.windows
                 .get(&parent)
@@ -487,6 +555,7 @@ impl Ui {
                 title_height,
                 margin,
                 movable,
+                parent_force_focus,
                 font_atlas,
             )
         });
@@ -525,14 +594,16 @@ impl Ui {
         position: Vector2,
         size: Vector2,
     ) -> WindowContext {
-        self.input.in_modal = true;
+        self.input.window_active = true;
+        self.in_modal = true;
 
         let font_atlas = self.font_atlas.clone();
 
         let window = self.modal.get_or_insert_with(|| {
-            Window::new(id, None, position, size, 0.0, 0.0, false, font_atlas)
+            Window::new(id, None, position, size, 0.0, 0.0, false, true, font_atlas)
         });
 
+        window.parent = self.active_window;
         window.size = size;
         window.want_close = false;
         window.active = true;
@@ -558,21 +629,28 @@ impl Ui {
     }
 
     pub(crate) fn end_modal(&mut self) {
-        self.input.in_modal = false;
+        self.in_modal = false;
+        self.input.window_active = self.is_input_hovered(self.active_window.unwrap_or(0));
     }
 
     pub(crate) fn end_window(&mut self) {
         self.active_window = self.child_window_stack.pop();
+        self.input.window_active = self.is_input_hovered(self.active_window.unwrap_or(0));
     }
 
     pub(crate) fn get_active_window_context(&mut self) -> WindowContext {
         let focused;
-        let window = if self.input.in_modal == false {
-            let active_window = self
-                .active_window
-                .expect("Rendering outside of window unsupported");
-            focused = self.is_focused(active_window);
-            self.windows.get_mut(&active_window).unwrap()
+        let window = if self.in_modal == false {
+            match self.active_window {
+                None | Some(0) => {
+                    focused = true;
+                    &mut self.root_window
+                }
+                Some(active_window) => {
+                    focused = self.is_focused(active_window);
+                    self.windows.get_mut(&active_window).unwrap()
+                }
+            }
         } else {
             focused = true;
             self.modal.as_mut().unwrap()
@@ -688,7 +766,34 @@ impl Ui {
         context.close();
     }
 
-    pub fn is_focused(&self, id: Id) -> bool {
+    fn is_input_hovered(&self, id: Id) -> bool {
+        // if thats exactly the clicked window - it's always the hovered one
+        if id == self.hovered_window {
+            return true;
+        }
+
+        // hovered window is always the root window and the given id may be the child
+        // window id
+        // so need to figure the root id
+
+        if self.in_modal {
+            return true;
+        } else {
+            self.child_window_stack
+                .get(0)
+                .map_or(false, |root| *root == self.hovered_window)
+        }
+    }
+
+    fn is_focused(&self, id: Id) -> bool {
+        if self
+            .windows
+            .get(&id)
+            .map_or(false, |window| window.force_focus)
+        {
+            return true;
+        }
+
         if let Some(focused_window) = self
             .windows_focus_order
             .iter()
@@ -701,6 +806,7 @@ impl Ui {
                 return *parent == *focused_window;
             }
         }
+
         return false;
     }
 
@@ -714,6 +820,8 @@ impl Ui {
         self.drag_hovered_previous_frame = self.drag_hovered;
         self.drag_hovered = None;
         self.input.reset();
+        self.input.window_active = self.hovered_window == 0;
+
         self.key_repeat.new_frame(self.time);
 
         for (_, window) in &mut self.windows {
@@ -730,12 +838,18 @@ impl Ui {
             window.was_active = window.active;
             window.active = false;
             window.childs.clear();
+        }
 
-            self.input.modal_active = window.was_active;
+        {
+            self.root_window.draw_commands.clear();
+            self.root_window.cursor.reset();
+            self.root_window.childs.clear();
         }
     }
 
     pub fn render(&mut self, draw_list: &mut Vec<DrawList>) {
+        self.render_window(&self.root_window, Vector2::new(0., 0.), draw_list);
+
         for window in self.windows_focus_order.iter().rev() {
             let window = &self.windows[window];
             if window.was_active {

@@ -29,7 +29,7 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
     }
 
     pub fn ui(self, ui: &mut Ui, data: &mut usize) -> usize {
-        let context = ui.get_active_window_context();
+        let mut context = ui.get_active_window_context();
 
         let size = Vector2::new(
             context.window.cursor.area.w
@@ -43,7 +43,8 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
         let triangle_area_w = 19.;
 
         let clickable_rect = Rect::new(pos.x, pos.y, active_area_w, size.y);
-        let hovered = clickable_rect.contains(context.input.mouse_position);
+
+        let (hovered, _) = context.register_click_intention(clickable_rect);
 
         let state = context
             .storage_any
@@ -86,13 +87,12 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
             Color::from_rgba(0, 0, 0, 255),
         );
 
-        if context.focused && hovered && context.input.click_up {
-            *state ^= true;
-        }
+        let modal_size = Vector2::new(200.0, self.variants.len() as f32 * 20.0);
+        let modal_rect = Rect::new(pos.x, pos.y + 20.0, modal_size.x, modal_size.y);
 
-        let modal_size = Vector2::new(200.0, self.variants.len() as f32 * 20.0 + 20.0);
-        let modal_rect = Rect::new(pos.x, pos.y, modal_size.x, modal_size.y);
-        if *state
+        if *state == false && context.focused && hovered && context.input.click_down {
+            *state = true;
+        } else if *state
             && (context.input.escape
                 || context.input.enter
                 || (modal_rect.contains(context.input.mouse_position) == false
@@ -102,7 +102,11 @@ impl<'a, 'b, 'c> ComboBox<'a, 'b, 'c> {
         }
 
         if *state {
-            let context = ui.begin_modal(hash!("combobox", self.id), pos, modal_size);
+            let context = ui.begin_modal(
+                hash!("combobox", self.id),
+                pos + Vector2::new(0., 20.),
+                modal_size,
+            );
 
             let state = context
                 .storage_any
