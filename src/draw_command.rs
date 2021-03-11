@@ -1,3 +1,5 @@
+use crate::FONT_SCALE;
+use crate::SCALE;
 use crate::{Color, Rect, Vector2};
 
 use miniquad_text_rusttype::FontAtlas;
@@ -118,7 +120,7 @@ impl CommandsList {
             let font_data = font_data.scale(self.font_atlas.font_size as f32);
             let advance = font_data.left_padding + font_data.size.0 + font_data.right_padding;
 
-            return advance;
+            return advance / FONT_SCALE;
         }
 
         0.
@@ -145,42 +147,43 @@ impl CommandsList {
         if let Some(font_data) = self.font_atlas.character_infos.get(&character) {
             let font_data = font_data.scale(self.font_atlas.font_size as f32);
 
-            let left_coord = font_data.left_padding;
+            let left_coord = font_data.left_padding / FONT_SCALE;
             // 4.0 cames from lack of understanding of how ttf works
             // with 4.0 top_coord is a top_coord of any buttons, wich makes a character be drawen like:
             // (x, y).....................(x + advance, y)
             // ...........................
             // (x, y + self.font_size.y)..(x + advance, y + _)
-            let top_coord = self.font_atlas.font_size as f32 - font_data.height_over_line - 4.0;
+            let top_coord = self.font_atlas.font_size as f32 / FONT_SCALE - font_data.height_over_line / FONT_SCALE - 4.0;
 
             let rect = Rect::new(
                 left_coord + position.x,
                 top_coord + position.y,
-                font_data.size.0,
-                font_data.size.1,
+                font_data.size.0 / SCALE,
+                font_data.size.1 / SCALE,
             );
             if self
                 .clipping_zone
                 .map_or(false, |clip| !clip.overlaps(&rect))
             {
                 let advance = font_data.left_padding + font_data.size.0 + font_data.right_padding;
-                return Some(advance);
+                return Some(advance / FONT_SCALE);
             }
 
             let cmd = DrawCommand::DrawCharacter {
                 dest: rect,
                 source: Rect::new(
-                    font_data.tex_coords.0,
-                    font_data.tex_coords.1,
-                    font_data.tex_size.0,
-                    font_data.tex_size.1,
+                    // We divide this by scale, because in vertices is will be multiplied again, and we should get same coordinatesu
+                    font_data.tex_coords.0 / SCALE,
+                    font_data.tex_coords.1 / SCALE,
+                    font_data.tex_size.0 / SCALE,
+                    font_data.tex_size.1 / SCALE,
                 ),
                 color: color,
             };
             self.add_command(cmd);
 
             let advance = font_data.left_padding + font_data.size.0 + font_data.right_padding;
-            Some(advance)
+            Some(advance / FONT_SCALE)
         } else {
             None
         }

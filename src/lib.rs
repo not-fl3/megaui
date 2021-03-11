@@ -11,6 +11,9 @@ mod style;
 mod types;
 mod ui;
 
+pub const SCALE: f32 = 1.5;
+pub const FONT_SCALE: f32 = ((13. * SCALE) as u32) as f32 / 13.;
+
 pub mod widgets;
 
 pub use clipboard::ClipboardObject;

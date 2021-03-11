@@ -1,3 +1,4 @@
+use crate::SCALE;
 use crate::draw_command::DrawCommand;
 use crate::types::{Color, Rect};
 use crate::Vector2;
@@ -26,7 +27,11 @@ impl From<Vertex> for VertexInterop {
 }
 
 impl Vertex {
-    pub fn new(x: f32, y: f32, u: f32, v: f32, color: Color) -> Vertex {
+    pub fn new(mut x: f32, mut y: f32, mut u: f32, mut v: f32, color: Color) -> Vertex {
+        x *= SCALE;
+        y *= SCALE;
+        u *= SCALE;
+        v *= SCALE;
         Vertex {
             pos: [x, y, 0.],
             uv: [u, v],

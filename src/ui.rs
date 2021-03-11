@@ -1,3 +1,4 @@
+use crate::SCALE;
 use crate::{
     canvas::DrawCanvas, draw_command::CommandsList, draw_list::DrawList, types::Rect,
     types::Vector2, InputHandler, Style,
@@ -314,7 +315,10 @@ impl<'a> WindowContext<'a> {
 }
 
 impl InputHandler for Ui {
-    fn mouse_down(&mut self, position: (f32, f32)) {
+    fn mouse_down(&mut self, mut position: (f32, f32)) {
+        position.0 /= SCALE;
+        position.1 /= SCALE;
+
         let position = Vector2::new(position.0, position.1);
 
         self.input.is_mouse_down = true;
@@ -365,7 +369,10 @@ impl InputHandler for Ui {
         self.input.mouse_wheel = Vector2::new(x, y);
     }
 
-    fn mouse_move(&mut self, position: (f32, f32)) {
+    fn mouse_move(&mut self, mut position: (f32, f32)) {
+        position.0 /= SCALE;
+        position.1 /= SCALE;
+
         let position = Vector2::new(position.0, position.1);
 
         // assuming that the click was to the root window
@@ -435,7 +442,7 @@ impl Ui {
     pub fn new() -> Ui {
         let mut font_atlas = FontAtlas::new(
             &include_bytes!("../assets/ProggyClean.ttf")[..],
-            13,
+            (13. * SCALE) as u32,
             FontAtlas::ascii_character_list(),
         )
         .unwrap();
@@ -733,7 +740,10 @@ impl Ui {
         self.input.cursor_grabbed
     }
 
-    pub fn is_mouse_over(&self, mouse_position: Vector2) -> bool {
+    pub fn is_mouse_over(&self, mut mouse_position: Vector2) -> bool {
+        mouse_position.x /= SCALE;
+        mouse_position.y /= SCALE;
+
         for window in self.windows_focus_order.iter() {
             let window = &self.windows[window];
             if window.was_active == false {
